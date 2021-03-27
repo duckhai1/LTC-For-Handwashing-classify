@@ -1,3 +1,8 @@
+raw_data/
+clean_data/
+draft/
+dataset.zip
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
