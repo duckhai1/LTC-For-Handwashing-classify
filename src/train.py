@@ -13,64 +13,50 @@ from ctrnn_model import CTRNN, NODE, CTGRU
 
 class DataSet:
     def __init__(self):
-        train_x, train_y, test_x, test_y, val_x, val_y = self.load_data_from_file()
+        all_x, all_y = self.load_data_from_file()
 
-        self.train_x = np.stack(train_x, axis=1)
-        self.train_y = np.stack(train_y, axis=1)
-        self.test_x = np.stack(test_x, axis=1)
-        self.test_y = np.stack(test_y, axis=1)
-        self.val_x = np.stack(val_x, axis=1)
-        self.val_y = np.stack(val_y, axis=1)
+        self.all_x = np.stack(all_x, axis=1)
+        self.all_y = np.stack(all_y, axis=1)
         
+        self.divide_dataset()
         print(self.train_x.shape)
+        print(self.train_y.shape)
         
         
     def load_data_from_file(self):
         # === for testing
         test = 0
-        debug = False
+        debug = True
         # ===
 
-        DATA_ROOT_PATH = os.path.join("..", "clean_data")
+        DATA_PATH = os.path.join("..", "clean_data")
         DATA_EXTENSION = ('.npy')
 
-        all_x = {}
-        all_y = {}
+        all_x = []
+        all_y = []
         
-        # read each type of dataset (train/test)
-        dataset_list = glob.glob(os.path.join(DATA_ROOT_PATH, "*"))
-        for dataset_path in dataset_list:
-            data_type = os.path.basename(dataset_path)
-            all_x[data_type] = []
-            all_y[data_type] = []
+        # read each label in dataset
+        for _, label_list, _ in os.walk(DATA_PATH):
+            for label in label_list:
+                print(label)
 
-            # read each label in dataset
-            for _, label_list, _ in os.walk(dataset_path):
-                for label in label_list:
-                    print("\t" + label)
+                # read each video file in each label
+                for dirname, _, filenames in os.walk(os.path.join(DATA_PATH, label)):
+                    for filename in filenames:
+                        if filename.endswith(DATA_EXTENSION):
+                            # === for testing
+                            if test > 4 and debug == True:
+                                break
+                            test += 1 
+                            # ===
 
-                    # read each video file in each label
-                    for dirname, _, filenames in os.walk(os.path.join(dataset_path, label)):
-                        for filename in filenames:
-                            if filename.endswith(DATA_EXTENSION):
-                                # === for testing
-                                if test > 4 and debug == True:
-                                    break
-                                test += 1 
-                                # ===
-
-                                data_path = os.path.join(dirname, filename)
-                                feature = np.load(data_path)
-                                all_x[data_type].append(feature[:,:-1])
-                                all_y[data_type].append(feature[:,-1])
-
-                                print("\t\t" +data_path)
-                                
-            
-            all_x[data_type] = np.array(all_x[data_type])
-            all_y[data_type] = np.array(all_y[data_type]) 
-        
-        return all_x["train"], all_y["train"], all_x["test"], all_y["test"], all_x["validation"], all_y["validation"]
+                            data_path = os.path.join(dirname, filename)
+                            print("\treading: " +data_path)
+                            feature = np.load(data_path)
+                            all_x.append(feature[:,:-1])
+                            all_y.append(feature[:,-1])
+                              
+        return np.array(all_x), np.array(all_y)
 
     def iterate_train(self,batch_size=16):
         total_seqs = self.train_x.shape[1]
@@ -84,18 +70,18 @@ class DataSet:
             batch_y = self.train_y[:,permutation[start:end]]
             yield (batch_x,batch_y)
 
-    def divide_dataset(self, all_x, all_y):
-        total_seqs = all_x.shape[1]
+    def divide_dataset(self, valid_ratio=0.2, test_ratio=0.1):
+        total_seqs = self.all_x.shape[1]
         permutation = np.random.RandomState(27731).permutation(total_seqs)
-        valid_size = int(0.2*total_seqs)
-        test_size = int(0.1*total_seqs)
+        valid_size = int(valid_ratio*total_seqs)
+        test_size = int(test_ratio*total_seqs)
 
-        self.valid_x = all_x[:,permutation[:valid_size]]
-        self.valid_y = all_y[:,permutation[:valid_size]]
-        self.test_x = all_x[:,permutation[valid_size:valid_size+test_size]]
-        self.test_y = all_y[:,permutation[valid_size:valid_size+test_size]]
-        self.train_x = all_x[:,permutation[valid_size+test_size:]]
-        self.train_y = all_y[:,permutation[valid_size+test_size:]]
+        self.valid_x = self.all_x[:,permutation[:valid_size]]
+        self.valid_y = self.all_y[:,permutation[:valid_size]]
+        self.test_x = self.all_x[:,permutation[valid_size:valid_size+test_size]]
+        self.test_y = self.all_y[:,permutation[valid_size:valid_size+test_size]]
+        self.train_x = self.all_x[:,permutation[valid_size+test_size:]]
+        self.train_y = self.all_y[:,permutation[valid_size+test_size:]]
 
 
 
