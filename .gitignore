@@ -1,6 +1,8 @@
 clean_data/
 draft/
 dataset.zip
+results/
+tf_sessions/
 
 *.mp4
 # Byte-compiled / optimized / DLL files

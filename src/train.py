@@ -142,20 +142,20 @@ class TrainingModel:
         self.sess = tf.InteractiveSession()
         self.sess.run(tf.global_variables_initializer())
 
-        # # self.result_file = os.path.join("results","person","{}_{}_{:02d}.csv".format(model_type,model_size,int(100*self.sparsity_level)))
-        # self.result_file = os.path.join("results","person","{}_{}.csv".format(model_type,model_size))
-        # if(not os.path.exists("results/person")):
-        #     os.makedirs("results/person")
-        # if(not os.path.isfile(self.result_file)):
-        #     with open(self.result_file,"w") as f:
-        #         f.write("best epoch, train loss, train accuracy, valid loss, valid accuracy, test loss, test accuracy\n")
+        # self.result_file = os.path.join("results","person","{}_{}_{:02d}.csv".format(model_type,model_size,int(100*self.sparsity_level)))
+        self.result_file = os.path.join("results","{}_{}.csv".format(model_type,model_size))
+        if(not os.path.exists("results/person")):
+            os.makedirs("results/person")
+        if(not os.path.isfile(self.result_file)):
+            with open(self.result_file,"w") as f:
+                f.write("best epoch, train loss, train accuracy, valid loss, valid accuracy, test loss, test accuracy\n")
 
-        # # store the save session
-        # self.checkpoint_path = os.path.join("tf_sessions","{}".format(model_type))
-        # if(not os.path.exists("tf_sessions")):
-        #     os.makedirs("tf_sessions")
+        # store the save session
+        self.checkpoint_path = os.path.join("tf_sessions","{}".format(model_type))
+        if(not os.path.exists("tf_sessions")):
+            os.makedirs("tf_sessions")
             
-        # self.saver = tf.train.Saver()
+        self.saver = tf.train.Saver()
 
 
     def get_sparsity_ops(self):
@@ -183,38 +183,31 @@ class TrainingModel:
         ))
         return v_assign_op
 
-    # def save(self):
-    #     self.saver.save(self.sess, self.checkpoint_path)
+    def save(self):
+        self.saver.save(self.sess, self.checkpoint_path)
 
-    # def restore(self):
-    #     self.saver.restore(self.sess, self.checkpoint_path)
+    def restore(self):
+        self.saver.restore(self.sess, self.checkpoint_path)
 
     def fit(self,hanwash_data,epochs,verbose=True,log_period=50):
         best_valid_accuracy = 0
         best_valid_stats = (0,0,0,0,0,0,0)
-        # self.save()
+        self.save()
         print("Entering training loop")
         for e in range(epochs):
-            # # log the duration training result
-            # if(e%log_period == 0):
-            #     test_acc,test_loss = self.sess.run([self.accuracy,self.loss],{self.x:hanwash_data.test_x,self.target_y: hanwash_data.test_y})
-            #     valid_acc,valid_loss = self.sess.run([self.accuracy,self.loss],{self.x:hanwash_data.valid_x,self.target_y: hanwash_data.valid_y})
-            #     if(valid_acc > best_valid_accuracy and e > 0):
-            #         best_valid_accuracy = valid_acc
-            #         best_valid_stats = (
-            #             e,
-            #             np.mean(losses),np.mean(accs)*100,
-            #             valid_loss,valid_acc*100,
-            #             test_loss,test_acc*100
-            #         )
-            #         self.save()
-            # if(verbose and e%log_period == 0):
-            #     print("Epochs {:03d}, train loss: {:0.2f}, train accuracy: {:0.2f}%, valid loss: {:0.2f}, valid accuracy: {:0.2f}%, test loss: {:0.2f}, test accuracy: {:0.2f}%".format(
-            #         e,
-            #         np.mean(losses),np.mean(accs)*100,
-            #         valid_loss,valid_acc*100,
-            #         test_loss,test_acc*100
-            #     ))
+            # log the duration training result
+            if(e%log_period == 0):
+                test_acc,test_loss = self.sess.run([self.accuracy,self.loss],{self.x:hanwash_data.test_x,self.target_y: hanwash_data.test_y})
+                valid_acc,valid_loss = self.sess.run([self.accuracy,self.loss],{self.x:hanwash_data.valid_x,self.target_y: hanwash_data.valid_y})
+                if(valid_acc > best_valid_accuracy and e > 0):
+                    best_valid_accuracy = valid_acc
+                    best_valid_stats = (
+                        e,
+                        np.mean(losses),np.mean(accs)*100,
+                        valid_loss,valid_acc*100,
+                        test_loss,test_acc*100
+                    )
+                    self.save()
             
             # training
             losses = []
@@ -229,23 +222,31 @@ class TrainingModel:
                 print("loss: " + str(loss))
                 print("acc: " + str(acc))
 
+            if(verbose and e%log_period == 0):
+                print("Epochs {:03d}, train loss: {:0.2f}, train accuracy: {:0.2f}%, valid loss: {:0.2f}, valid accuracy: {:0.2f}%, test loss: {:0.2f}, test accuracy: {:0.2f}%".format(
+                    e,
+                    np.mean(losses),np.mean(accs)*100,
+                    valid_loss,valid_acc*100,
+                    test_loss,test_acc*100
+                ))
+
             if(e > 0 and (not np.isfinite(np.mean(losses)))):
                 break
-        # self.restore()
-        # best_epoch,train_loss,train_acc,valid_loss,valid_acc,test_loss,test_acc = best_valid_stats
-        # print("Best epoch {:03d}, train loss: {:0.2f}, train accuracy: {:0.2f}%, valid loss: {:0.2f}, valid accuracy: {:0.2f}%, test loss: {:0.2f}, test accuracy: {:0.2f}%".format(
-        #     best_epoch,
-        #     train_loss,train_acc,
-        #     valid_loss,valid_acc,
-        #     test_loss,test_acc
-        # ))
-        # with open(self.result_file,"a") as f:
-        #     f.write("{:03d}, {:0.2f}, {:0.2f}, {:0.2f}, {:0.2f}, {:0.2f}, {:0.2f}\n".format(
-        #     best_epoch,
-        #     train_loss,train_acc,
-        #     valid_loss,valid_acc,
-        #     test_loss,test_acc
-        # ))
+        self.restore()
+        best_epoch,train_loss,train_acc,valid_loss,valid_acc,test_loss,test_acc = best_valid_stats
+        print("Best epoch {:03d}, train loss: {:0.2f}, train accuracy: {:0.2f}%, valid loss: {:0.2f}, valid accuracy: {:0.2f}%, test loss: {:0.2f}, test accuracy: {:0.2f}%".format(
+            best_epoch,
+            train_loss,train_acc,
+            valid_loss,valid_acc,
+            test_loss,test_acc
+        ))
+        with open(self.result_file,"a") as f:
+            f.write("{:03d}, {:0.2f}, {:0.2f}, {:0.2f}, {:0.2f}, {:0.2f}, {:0.2f}\n".format(
+            best_epoch,
+            train_loss,train_acc,
+            valid_loss,valid_acc,
+            test_loss,test_acc
+        ))
 
 
 
