@@ -1,8 +1,9 @@
-clean_data/
+Registration for Bachelor Thesis.docx
 draft/
 dataset.zip
 results/
 tf_sessions/
+.vscode/
 
 *.mp4
 # Byte-compiled / optimized / DLL files

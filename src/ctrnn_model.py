@@ -16,7 +16,7 @@ class CTRNN(tf.nn.rnn_cell.RNNCell):
 
         # Time-constant of the cell
         self.fix_tau = fix_tau
-        self.tau = 1
+        self.tau = 1 # time constant T
         self.cell_clip = cell_clip
 
 
@@ -200,7 +200,7 @@ class CTGRU(tf.nn.rnn_cell.RNNCell):
         self._num_units = num_units
         self.M = M
         self.cell_clip = cell_clip
-        self.ln_tau_table = np.empty(self.M)
+        self.ln_tau_table = np.empty(self.M)        # M is number of time scale for the gate
         tau = 1
         for i in range(self.M):
             self.ln_tau_table[i] = np.log(tau)

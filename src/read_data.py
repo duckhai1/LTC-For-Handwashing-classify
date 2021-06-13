@@ -14,8 +14,8 @@ DATA_PATH = os.path.join("..", "clean_data")
 DATA_EXTENSION = ('.npy')
 
 ## PROPERTY
-PROCESS_VIDEO_LENGTH = 180 # frames
-FPS = 30 #fps
+PROCESS_VIDEO_LENGTH = 30 # frames
+FRAME_STEP = 3
 
 label_map = {
     "Step_1": 0,
@@ -35,7 +35,7 @@ label_map = {
 
 def extract_video():
     # === for testing
-    test = 0
+    file_counter = 0
     debug = False
     # ===
 
@@ -49,9 +49,9 @@ def extract_video():
                 for filename in filenames:
                     if filename.endswith(VIDEO_EXTENSION):
                         # === for testing
-                        if test > 2 and debug == True:
+                        if file_counter > 2 and debug == True:
                             break
-                        test += 1 
+                        file_counter += 1 
                         # ===
 
                         video_path = os.path.join(dirname, filename)
@@ -73,6 +73,10 @@ def extract_video():
                             print("\t\tconvert into: " + path)
                             # process each image
                             for img_counter in range(PROCESS_VIDEO_LENGTH):
+                                # only get frame of each FRAME_STEP frames
+                                if img_counter % FRAME_STEP != 0:
+                                    continue
+                                
                                 # read each frame
                                 ret, frame = cap.read()         
                                 if not ret:
@@ -120,5 +124,5 @@ def clear_data():
 
 if __name__ == '__main__':
     prepare_data_destination()                
-    # clear_data()
+    clear_data()
     extract_video()

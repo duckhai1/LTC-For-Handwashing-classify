@@ -21,6 +21,8 @@ class DataSet:
         self.divide_dataset()
         print(self.train_x.shape)
         print(self.train_y.shape)
+        print(self.test_x.shape)
+        print(self.test_y.shape)
         
         
     def load_data_from_file(self):
@@ -45,8 +47,8 @@ class DataSet:
                     for filename in filenames:
                         if filename.endswith(DATA_EXTENSION):
                             # === for testing
-                            if test > 4 and debug == True:
-                                break
+                            # if test > 20 and debug == True:
+                            #     break
                             test += 1 
                             # ===
 
@@ -55,7 +57,7 @@ class DataSet:
                             feature = np.load(data_path)
                             all_x.append(feature[:,:-1])
                             all_y.append(feature[:,-1])
-                              
+                            
         return np.array(all_x), np.array(all_y)
 
     def iterate_train(self,batch_size=16):
@@ -219,8 +221,8 @@ class TrainingModel:
 
                 losses.append(loss)
                 accs.append(acc)
-                print("loss: " + str(loss))
-                print("acc: " + str(acc))
+                # print("loss: " + str(loss))
+                # print("acc: " + str(acc))
 
             if(verbose and e%log_period == 0):
                 print("Epochs {:03d}, train loss: {:0.2f}, train accuracy: {:0.2f}%, valid loss: {:0.2f}, valid accuracy: {:0.2f}%, test loss: {:0.2f}, test accuracy: {:0.2f}%".format(
@@ -251,14 +253,16 @@ class TrainingModel:
 
 
 if __name__ == '__main__':
+
     parser = argparse.ArgumentParser()
     parser.add_argument('--model',default="lstm")
     parser.add_argument('--log',default=1,type=int)
-    parser.add_argument('--size',default=180,type=int)
+    parser.add_argument('--size',default=10,type=int)
     parser.add_argument('--epochs',default=200,type=int)
     parser.add_argument('--sparsity',default=0.0,type=float)
     args = parser.parse_args()
 
-    dataset = DataSet()
-    model = TrainingModel(model_type = args.model,model_size=args.size,sparsity_level=args.sparsity)
-    model.fit(dataset,epochs=args.epochs,log_period=args.log)
+    with tf.device('/GPU:0'):
+        dataset = DataSet()
+        model = TrainingModel(model_type = args.model,model_size=args.size,sparsity_level=args.sparsity)
+        model.fit(dataset,epochs=args.epochs,log_period=args.log)

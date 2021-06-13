@@ -57,6 +57,7 @@ class LTCCell(tf.nn.rnn_cell.RNNCell):
         return self._num_units
 
     def _map_inputs(self,inputs,resuse_scope=False):
+        # input.shape = (unit_size, number_of_sample, number_of_feature)
         varscope = "sensory_mapping"
         reuse = tf.AUTO_REUSE
         if(resuse_scope):
