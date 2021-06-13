@@ -6,6 +6,7 @@ Dataset source: https://www.kaggle.com/realtimear/hand-wash-dataset
 LTC reference: https://github.com/raminmh/liquid_time_constant_networks/tree/master
 
 # How to run
+Go to src folder then:
 - Step 1: 
 
 > `python read_data.py`
