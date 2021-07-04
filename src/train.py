@@ -1,6 +1,6 @@
 import os
 import glob
-# os.environ['CUDA_VISIBLE_DEVICES'] = '-1'  # Run on CPU
+import pickle
 
 import numpy as np
 import pandas as pd
@@ -15,6 +15,7 @@ class DataSet:
     def __init__(self):
         all_x, all_y = self.load_data_from_file()
 
+        # all_x shape: (time step for each layer, number of batch, number of feature)
         self.all_x = np.stack(all_x, axis=1)
         self.all_y = np.stack(all_y, axis=1)
         
@@ -26,11 +27,6 @@ class DataSet:
         
         
     def load_data_from_file(self):
-        # === for testing
-        test = 0
-        debug = True
-        # ===
-
         DATA_PATH = os.path.join("..", "clean_data")
         DATA_EXTENSION = ('.npy')
 
@@ -38,26 +34,22 @@ class DataSet:
         all_y = []
         
         # read each label in dataset
+        print("Reading data...", end="")
         for _, label_list, _ in os.walk(DATA_PATH):
             for label in label_list:
-                print(label)
+                # print(label)
 
                 # read each video file in each label
                 for dirname, _, filenames in os.walk(os.path.join(DATA_PATH, label)):
                     for filename in filenames:
                         if filename.endswith(DATA_EXTENSION):
-                            # === for testing
-                            # if test > 20 and debug == True:
-                            #     break
-                            test += 1 
-                            # ===
-
                             data_path = os.path.join(dirname, filename)
-                            print("\treading: " +data_path)
+                            # print("\treading: " +data_path)
                             feature = np.load(data_path)
                             all_x.append(feature[:,:-1])
                             all_y.append(feature[:,-1])
-                            
+
+        print("Done")                    
         return np.array(all_x), np.array(all_y)
 
     def iterate_train(self,batch_size=16):
@@ -84,6 +76,7 @@ class DataSet:
         self.test_y = self.all_y[:,permutation[valid_size:valid_size+test_size]]
         self.train_x = self.all_x[:,permutation[valid_size+test_size:]]
         self.train_y = self.all_y[:,permutation[valid_size+test_size:]]
+        
 
 
 
@@ -143,21 +136,22 @@ class TrainingModel:
 
         self.sess = tf.InteractiveSession()
         self.sess.run(tf.global_variables_initializer())
+        self.saver = tf.train.Saver()
 
-        # self.result_file = os.path.join("results","person","{}_{}_{:02d}.csv".format(model_type,model_size,int(100*self.sparsity_level)))
         self.result_file = os.path.join("results","{}_{}.csv".format(model_type,model_size))
-        if(not os.path.exists("results/person")):
-            os.makedirs("results/person")
+        if(not os.path.exists("results")):
+            os.makedirs("results")
         if(not os.path.isfile(self.result_file)):
             with open(self.result_file,"w") as f:
-                f.write("best epoch, train loss, train accuracy, valid loss, valid accuracy, test loss, test accuracy\n")
+                f.write("epoch, train loss, train accuracy, valid loss, valid accuracy, test loss, test accuracy\n")
 
         # store the save session
-        self.checkpoint_path = os.path.join("tf_sessions","{}".format(model_type))
-        if(not os.path.exists("tf_sessions")):
-            os.makedirs("tf_sessions")
+        self.checkpoint_path = os.path.join("tf_sessions",f"{model_type}")
+        self.backup_file_name = f"model-{model_type}-size-{model_size}"
+        self.load_backup()
+        if(not os.path.exists(os.path.join("tf_sessions",f"{model_type}"))):
+            os.makedirs(os.path.join("tf_sessions",f"{model_type}"))
             
-        self.saver = tf.train.Saver()
 
 
     def get_sparsity_ops(self):
@@ -186,14 +180,16 @@ class TrainingModel:
         return v_assign_op
 
     def save(self):
-        self.saver.save(self.sess, self.checkpoint_path)
+        self.saver.save(self.sess, os.path.join(self.checkpoint_path, self.backup_file_name))
 
     def restore(self):
-        self.saver.restore(self.sess, self.checkpoint_path)
+        self.saver.restore(self.sess, os.path.join(self.checkpoint_path, self.backup_file_name))
+
+
 
     def fit(self,hanwash_data,epochs,verbose=True,log_period=50):
-        best_valid_accuracy = 0
-        best_valid_stats = (0,0,0,0,0,0,0)
+        have_new_best = False
+        # self.best_valid_accuracy, self.best_valid_stats= self.load_backup()
         self.save()
         print("Entering training loop")
         for e in range(epochs):
@@ -201,9 +197,10 @@ class TrainingModel:
             if(e%log_period == 0):
                 test_acc,test_loss = self.sess.run([self.accuracy,self.loss],{self.x:hanwash_data.test_x,self.target_y: hanwash_data.test_y})
                 valid_acc,valid_loss = self.sess.run([self.accuracy,self.loss],{self.x:hanwash_data.valid_x,self.target_y: hanwash_data.valid_y})
-                if(valid_acc > best_valid_accuracy and e > 0):
-                    best_valid_accuracy = valid_acc
-                    best_valid_stats = (
+                if(valid_acc > self.best_valid_accuracy and e > 0):
+                    have_new_best = True
+                    self.best_valid_accuracy = valid_acc
+                    self.best_valid_stats = (
                         e,
                         np.mean(losses),np.mean(accs)*100,
                         valid_loss,valid_acc*100,
@@ -221,10 +218,15 @@ class TrainingModel:
 
                 losses.append(loss)
                 accs.append(acc)
-                # print("loss: " + str(loss))
-                # print("acc: " + str(acc))
 
             if(verbose and e%log_period == 0):
+                with open(self.result_file,"a") as f:
+                    f.write("{:03d}, {:0.2f}, {:0.2f}, {:0.2f}, {:0.2f}, {:0.2f}, {:0.2f}\n".format(
+                    e,
+                    np.mean(losses),np.mean(accs)*100,
+                    valid_loss,valid_acc*100,
+                    test_loss,test_acc*100
+                ))
                 print("Epochs {:03d}, train loss: {:0.2f}, train accuracy: {:0.2f}%, valid loss: {:0.2f}, valid accuracy: {:0.2f}%, test loss: {:0.2f}, test accuracy: {:0.2f}%".format(
                     e,
                     np.mean(losses),np.mean(accs)*100,
@@ -234,35 +236,63 @@ class TrainingModel:
 
             if(e > 0 and (not np.isfinite(np.mean(losses)))):
                 break
-        self.restore()
-        best_epoch,train_loss,train_acc,valid_loss,valid_acc,test_loss,test_acc = best_valid_stats
-        print("Best epoch {:03d}, train loss: {:0.2f}, train accuracy: {:0.2f}%, valid loss: {:0.2f}, valid accuracy: {:0.2f}%, test loss: {:0.2f}, test accuracy: {:0.2f}%".format(
-            best_epoch,
-            train_loss,train_acc,
-            valid_loss,valid_acc,
-            test_loss,test_acc
-        ))
-        with open(self.result_file,"a") as f:
-            f.write("{:03d}, {:0.2f}, {:0.2f}, {:0.2f}, {:0.2f}, {:0.2f}, {:0.2f}\n".format(
-            best_epoch,
-            train_loss,train_acc,
-            valid_loss,valid_acc,
-            test_loss,test_acc
-        ))
 
+        with open(os.path.join(self.checkpoint_path, f"{self.backup_file_name}.pickle"), "wb") as bk_f:
+            pickle.dump([self.best_valid_accuracy, self.best_valid_stats], bk_f)
+
+        if (have_new_best):
+            best_epoch,train_loss,train_acc,valid_loss,valid_acc,test_loss,test_acc = self.best_valid_stats
+            print("# Best epoch {:03d}, train loss: {:0.2f}, train accuracy: {:0.2f}%, valid loss: {:0.2f}, valid accuracy: {:0.2f}%, test loss: {:0.2f}, test accuracy: {:0.2f}%".format(
+                best_epoch,
+                train_loss,train_acc,
+                valid_loss,valid_acc,
+                test_loss,test_acc
+            ))
+            with open(self.result_file,"a") as f:
+                f.write("# Best epoch {:03d}, train loss: {:0.2f}, train accuracy: {:0.2f}%, valid loss: {:0.2f}, valid accuracy: {:0.2f}%, test loss: {:0.2f}, test accuracy: {:0.2f}%\n".format(
+                best_epoch,
+                train_loss,train_acc,
+                valid_loss,valid_acc,
+                test_loss,test_acc
+                ))
+                f.write("="*30)
+
+    def test(self,hanwash_data):
+        # self.best_valid_accuracy, self.best_valid_stats= self.load_backup()
+
+        y_test, test_acc,test_loss = self.sess.run([self.y, self.accuracy,self.loss],{self.x:hanwash_data.test_x,self.target_y: hanwash_data.test_y})
+        print("Test result: test loss: {:0.2f}, test accuracy: {:0.2f}%".format(test_loss,test_acc*100))
+        print(y_test[0][0].shape)
+        print(y_test[0][0])
+
+    def load_backup(self):
+        if (os.path.exists(self.checkpoint_path)): 
+            #First let's load meta graph and restore weights
+            checkpoint_path = os.path.join("tf_sessions",f"{self.model_type}")
+            saver = tf.train.import_meta_graph(os.path.join(checkpoint_path, f"model-{self.model_type}-size-{self.model_size}.meta"))
+            saver.restore(self.sess,tf.train.latest_checkpoint(checkpoint_path))
+
+            with open(os.path.join(self.checkpoint_path, f"{self.backup_file_name}.pickle"), "rb") as bk_f:
+                self.best_valid_accuracy, self.best_valid_stats = pickle.load(bk_f)
+        
+        else:
+            self.best_valid_accuracy = 0
+            self.best_valid_stats = (0,0,0,0,0,0,0)
 
 
 if __name__ == '__main__':
-
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model',default="lstm")
-    parser.add_argument('--log',default=1,type=int)
-    parser.add_argument('--size',default=10,type=int)
-    parser.add_argument('--epochs',default=200,type=int)
+    parser.add_argument('--mode',default="train")               # train/test
+    parser.add_argument('--model',default="lstm")               # type of Cell for network
+    parser.add_argument('--log',default=1,type=int)             # number of iterative for each save
+    parser.add_argument('--size',default=10,type=int)           # time step
+    parser.add_argument('--epochs',default=200,type=int)        # iterative
     parser.add_argument('--sparsity',default=0.0,type=float)
     args = parser.parse_args()
 
-    with tf.device('/GPU:0'):
-        dataset = DataSet()
-        model = TrainingModel(model_type = args.model,model_size=args.size,sparsity_level=args.sparsity)
-        model.fit(dataset,epochs=args.epochs,log_period=args.log)
+    dataset = DataSet()
+    model = TrainingModel(model_type = args.model,model_size=args.size,sparsity_level=args.sparsity)
+    if (args.mode == "train"):
+        model.fit(dataset,epochs=args.epochs,verbose=True, log_period=args.log)
+    elif (args.mode == "test"):
+        model.test(dataset)
