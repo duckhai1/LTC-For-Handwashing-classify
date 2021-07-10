@@ -16,6 +16,7 @@ DATA_EXTENSION = ('.npy')
 ## PROPERTY
 PROCESS_VIDEO_LENGTH = 30 # frames
 FRAME_STEP = 3
+## => time step = PROCESS_VIDEO_LENGTH / FRAME_STEP
 
 label_map = {
     "Step_1": 0,
