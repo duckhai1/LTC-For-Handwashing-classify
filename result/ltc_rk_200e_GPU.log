@@ -1,3 +1,5 @@
+-------------
+1
 Step_1
 	reading: ..\clean_data\Step_1\HandWash_001_A_01_G01_sv_0.npy
 	reading: ..\clean_data\Step_1\HandWash_001_A_01_G01_sv_1.npy
@@ -3762,6 +3764,7 @@ Step_7_Right
 (10, 374)
 logit shape:  (?, ?, 7)
 Entering training loop
-Epochs 000, train loss: nan, train accuracy: 10.56%, valid loss: nan, valid accuracy: 9.85%, test loss: nan, test accuracy: 9.95%
+Epochs 000, train loss: nan, train accuracy: 10.60%, valid loss: nan, valid accuracy: 9.87%, test loss: nan, test accuracy: 9.79%
 Epochs 001, train loss: nan, train accuracy: 10.60%, valid loss: nan, valid accuracy: 9.08%, test loss: nan, test accuracy: 9.36%
-Best epoch 001, train loss: nan, train accuracy: 10.56%, valid loss: nan, valid accuracy: 9.08%, test loss: nan, test accuracy: 9.36%
+Best epoch 001, train loss: nan, train accuracy: 10.60%, valid loss: nan, valid accuracy: 9.08%, test loss: nan, test accuracy: 9.36%
+Runtime of the program is 838.529970407486
