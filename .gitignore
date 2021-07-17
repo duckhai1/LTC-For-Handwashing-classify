@@ -4,8 +4,9 @@ dataset.zip
 results/
 tf_sessions/
 .vscode/
-
+.idea/
 *.mp4
+*.avi
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

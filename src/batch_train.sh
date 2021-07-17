@@ -1,7 +1,8 @@
-python train.py --mode train --model lstm --epochs 100 > ../result/lstm_200e.log
-python train.py --mode train --model ltc --epochs 100 > ../result/ltc_200e.log
-python train.py --mode train --model node --epochs 100 > ../result/node_200e.log
-python train.py --mode train --model ctgru --epochs 100 > ../result/ctgru_200e.log
-python train.py --mode train --model ctrnn --epochs 100 > ../result/ctrnn_200e.log
+EPOCH_NUM=50
+# python train.py --mode train --model lstm --epochs ${EPOCH_NUM}
+python train.py --mode train --model ltc --epochs ${EPOCH_NUM} 
+python train.py --mode train --model node --epochs ${EPOCH_NUM}
+python train.py --mode train --model ctgru --epochs ${EPOCH_NUM}
+python train.py --mode train --model ctrnn --epochs ${EPOCH_NUM}
 # python train.py --model ltc_rk --epochs 200 > ../result/ltc_rk_200e.log
 # python train.py --model ltc_ex --epochs 200 > ../result/ltc_ex_200e.log
