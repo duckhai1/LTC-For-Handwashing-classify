@@ -16,19 +16,25 @@ from ctrnn_model import CTRNN, NODE, CTGRU
 
 ## import config property
 from property import *
+from read_data import *
 
 tf.logging.set_verbosity(tf.logging.ERROR)
 
 class DataSet:
-    def __init__(self):
+    def __init__(self, is_regenerate):
+        if (is_regenerate):
+            prepare_traindata_destination(LAYER_1_TRAIN_RAWDATA_PATH, LAYER_1_TRAIN_DATA_PATH)   
+            clear_train_data(LAYER_1_TRAIN_DATA_PATH)
+            extract_layer1_train_video()
+
         all_x, all_y = self.load_data_from_file()
 
         # all_x shape: (time step for each layer, number of batch, number of feature)
         self.all_x = np.stack(all_x, axis=1)
         self.all_y = np.stack(all_y, axis=1)
         
-        self.divide_dataset(VALID_RATIO, TEST_RATIO)
-        self.divide_train_data(NUMBER_OF_TREE)
+        self._divide_dataset(VALID_RATIO, TEST_RATIO)
+        self._divide_train_data(NUMBER_OF_TREE)
         print("self.train_x.shape", self.train_x.shape)
         print("self.train_y.shape", self.train_y.shape)
         print("self.train_x_set[0].shape", self.train_x_set[0].shape)
@@ -43,12 +49,12 @@ class DataSet:
         
         # read each label in dataset
         print("Reading data...", end="")
-        for _, label_list, _ in os.walk(TRAIN_DATA_PATH):
+        for _, label_list, _ in os.walk(LAYER_1_TRAIN_DATA_PATH):
             for label in label_list:
                 # print(label)
 
                 # read each video file in each label
-                for dirname, _, filenames in os.walk(os.path.join(TRAIN_DATA_PATH, label)):
+                for dirname, _, filenames in os.walk(os.path.join(LAYER_1_TRAIN_DATA_PATH, label)):
                     for filename in filenames:
                         if filename.endswith(DATA_EXTENSION):
                             data_path = os.path.join(dirname, filename)
@@ -74,7 +80,7 @@ class DataSet:
             batch_y = train_y[:,permutation[start:end]]
             yield (batch_x,batch_y)
 
-    def divide_dataset(self, valid_ratio, test_ratio):
+    def _divide_dataset(self, valid_ratio, test_ratio):
         total_seqs = self.all_x.shape[1]
         permutation = np.random.RandomState(27731).permutation(total_seqs)
         valid_size = int(valid_ratio*total_seqs)
@@ -87,7 +93,7 @@ class DataSet:
         self.train_x = self.all_x[:,permutation[valid_size+test_size:]]
         self.train_y = self.all_y[:,permutation[valid_size+test_size:]]
 
-    def divide_train_data(self, number_of_set):
+    def _divide_train_data(self, number_of_set):
         self.train_x_set = []
         self.train_y_set = []
         total_seqs = self.train_x.shape[1]
@@ -106,13 +112,6 @@ class DataSet:
         permutation = np.random.permutation(total_seqs)
         for i in range(total_seqs):
             yield (self.test_x[:,permutation[[i]]], self.test_y[:,permutation[[i]]])
-
-
-    ## For debug only
-    def get_random_test_data(self):
-        total_seqs = self.test_x.shape[1]
-        permutation = np.random.permutation(total_seqs)
-        return (self.test_x[:,permutation[[0]]], self.test_y[:,permutation[[0]]])
 
 
 class TrainingModel:
@@ -336,8 +335,6 @@ class TrainingModel:
 
 class TrainingForest:   
     def __init__(self, number_of_tree, model_type, model_size, sparsity_level):
-        self.dataset = DataSet()
-
         self.number_of_tree = number_of_tree
         self.model_type = model_type
         self.sparsity_level = sparsity_level
@@ -360,17 +357,16 @@ class TrainingForest:
         result_map = {0: "Step 1", 1: "Step 2", 2: "Step 3", 3: "Step 4", 4: "Step 5", 5: "Step 6", 6: "Step 7"}
         return result_map[result]
 
-    def fit(self, epochs, log_period):
+    def fit(self, dataset, epochs, log_period):
         for model_num in range(self.number_of_tree):
             model = TrainingModel(train_set_number=model_num, model_type = self.model_type,model_size=self.model_size,sparsity_level=self.sparsity_level)
-            model.fit(self.dataset, epochs=epochs,verbose=True, log_period=log_period)
+            model.fit(dataset, epochs=epochs,verbose=True, log_period=log_period)
 
             model.sess.close()
             tf.reset_default_graph()
 
         print("="*100)
         print("Finish training model, the last result can be found in 'result' folder")
-
 
     def evaluate(self, data):
         forest_result = {"Step 1": 0, "Step 2": 0, "Step 3": 0, "Step 4": 0, "Step 5": 0, "Step 6": 0, "Step 7": 0, "Total": 0}
@@ -392,30 +388,30 @@ class TrainingForest:
             model.sess.close()
             tf.reset_default_graph()
 
-        step1_pct = forest_result["Step 1"]/forest_result["Total"]*100
-        step2_pct = forest_result["Step 2"]/forest_result["Total"]*100
-        step3_pct = forest_result["Step 3"]/forest_result["Total"]*100
-        step4_pct = forest_result["Step 4"]/forest_result["Total"]*100
-        step5_pct = forest_result["Step 5"]/forest_result["Total"]*100
-        step6_pct = forest_result["Step 6"]/forest_result["Total"]*100
-        step7_pct = forest_result["Step 7"]/forest_result["Total"]*100
+        step1_pct = forest_result["Step 1"]/forest_result["Total"]
+        step2_pct = forest_result["Step 2"]/forest_result["Total"]
+        step3_pct = forest_result["Step 3"]/forest_result["Total"]
+        step4_pct = forest_result["Step 4"]/forest_result["Total"]
+        step5_pct = forest_result["Step 5"]/forest_result["Total"]
+        step6_pct = forest_result["Step 6"]/forest_result["Total"]
+        step7_pct = forest_result["Step 7"]/forest_result["Total"]
 
-        forest_percent = {"Step 1": f"{step1_pct:.2f}%", 
-                          "Step 2": f"{step2_pct:.2f}%", 
-                          "Step 3": f"{step3_pct:.2f}%", 
-                          "Step 4": f"{step4_pct:.2f}%",  
-                          "Step 5": f"{step5_pct:.2f}%",  
-                          "Step 6": f"{step6_pct:.2f}%", 
-                          "Step 7": f"{step7_pct:.2f}%"}
-        forest_final_predict = max(forest_percent, key=lambda k: float(forest_percent[k][:-1]))
-        print("forest_percent: ", forest_percent)
+        forest_percent = {"Step 1": round(step1_pct, 4), 
+                          "Step 2": round(step2_pct, 4), 
+                          "Step 3": round(step3_pct, 4), 
+                          "Step 4": round(step4_pct, 4),  
+                          "Step 5": round(step5_pct, 4),  
+                          "Step 6": round(step6_pct, 4), 
+                          "Step 7": round(step7_pct, 4)}
+        forest_final_predict = max(forest_percent, key=lambda k: forest_percent[k])
+        # print("forest_percent: ", forest_percent)
 
         return (forest_final_predict, forest_percent)
 
-    def test_accuracy(self):
+    def predict(self, dataset):
         total_test_data = 0
         correct_predict = 0
-        for test_x,test_y in self.dataset.iterate_test():
+        for test_x,test_y in dataset.iterate_test():
             total_test_data += 1
             test_y = self._map_test_result(test_y)
             forest_final_predict, forest_percent = self.evaluate(test_x)
@@ -444,14 +440,15 @@ class TrainingForest:
         print(f"Training forest accuracy: {accuracy}%")
 
 
-def run_model_execute_task(mode):
+def run_layer_1_model_execute_task(mode=None):
+    dataset = DataSet(REGENERATE_LAYER1_DATA)
     training_forest = TrainingForest(NUMBER_OF_TREE, MODEL_TYPE, MODEL_SIZE, MODEL_SPARSITY)
     if (mode == "train"):
-        training_forest.fit(MODEL_EPOCH_NUM, MODEL_LOG_PERIOD)
+        training_forest.fit(dataset, MODEL_EPOCH_NUM, MODEL_LOG_PERIOD)
     elif (mode == "test"):
-        training_forest.test_accuracy()
-        # test_x, test_y = training_forest.dataset.get_random_test_data()
-        # forest_final_predict, forest_final_percentage = training_forest.evaluate(test_x)
+        training_forest.predict(dataset)
+    
+    return training_forest
 
 
 if __name__ == '__main__':
@@ -459,4 +456,4 @@ if __name__ == '__main__':
     parser.add_argument('--mode',default="train")               # train/test
     args = parser.parse_args()
 
-    run_model_execute_task(args.mode)
+    run_layer_1_model_execute_task(args.mode)

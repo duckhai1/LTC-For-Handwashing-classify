@@ -2,37 +2,45 @@ import os
 
 ### PROPERTY ###
 ######
-TRAIN_RAWDATA_PATH = os.path.join("..", "data", "train", "raw_video")
-TRAIN_DATA_PATH = os.path.join("..", "data", "train", "clean_data")
+LAYER_1_TRAIN_RAWDATA_PATH = os.path.join("..", "data", "layer_1_train", "raw_video")
+LAYER_1_TRAIN_DATA_PATH = os.path.join("..", "data", "layer_1_train", "clean_data")
+LAYER_2_TRAIN_RAWDATA_PATH = os.path.join("..", "data", "layer_2_train", "raw_video")
+LAYER_2_TRAIN_DATA_PATH = os.path.join("..", "data", "layer_2_train", "clean_data")
+LAYER_2_PROCESSED_DATA_PATH = os.path.join("..", "data", "layer_2_train", "processed_data")
 TEST_RAWDATA_PATH = os.path.join("..", "data", "test", "raw_video")
 TEST_DATA_PATH = os.path.join("..", "data", "test", "clean_data")
 
 VIDEO_EXTENSION = ('.mp4', '.avi')
 DATA_EXTENSION = ('.npy')
+
+REGENERATE_LAYER1_DATA = False
+REGENERATE_LAYER2_DATA = False
 ######
 
 ### Preprocessing hyperparameter ###
 ######
 PROCESS_VIDEO_LENGTH = 30   # frames 
 FRAME_STEP = 3              # only take 1 every 3 frames
-WINDOWS_LENGTH = PROCESS_VIDEO_LENGTH / FRAME_STEP  # get 1 second and only get 10 frame per second
+WINDOWS_LENGTH = int(PROCESS_VIDEO_LENGTH / FRAME_STEP)  # get 1 second and only get 10 frame per second
 ######
 
-### Training hyperparameter ###
+### Layer 1 Model hyperparameter ###
 ######
 VALID_RATIO = 0.06
 TEST_RATIO = 0.03
 BATCH_SIZE = 2
+NUMBER_OF_TREE = 12     # 12
 
-NUMBER_OF_TREE = 12
-######
-
-### Model parameter ###
-######
 MODEL_TYPE = "lstm"       # type of Cell for network
 MODEL_SIZE = 10           # time step
 MODEL_EPOCH_NUM = 200     # iterative
-MODEL_LOG_PERIOD = 1       # number of iterative for each save
+MODEL_LOG_PERIOD = 1      # number of iterative for each save
 MODEL_SPARSITY = 0.0
 ######
 
+### Layer 2 Model parameter ###
+######
+LAYER_2_MODEL_TYPE = "mlp"
+LAYER_2_VALID_RATIO = 0.2
+LAYER_2_TEST_RATIO = 0.2
+######

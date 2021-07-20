@@ -40,17 +40,17 @@ def debug_train():
 
 
 def debug_read_data():
-    TRAIN_RAWDATA_PATH = os.path.join("..", "data", "train", "raw_video")
-    TRAIN_DATA_PATH = os.path.join("..", "data", "train", "clean_data")
+    LAYER_1_TRAIN_RAWDATA_PATH = os.path.join("..", "data", "layer_1_train", "raw_video")
+    LAYER_1_TRAIN_DATA_PATH = os.path.join("..", "data", "layer_1_train", "clean_data")
     # VIDEO_EXTENSION = ('.mp4', '.avi')
     # DATA_EXTENSION = ('.npy')
 
     # read each label video
-    for _, label_list, _ in os.walk(TRAIN_RAWDATA_PATH):
+    for _, label_list, _ in os.walk(LAYER_1_TRAIN_RAWDATA_PATH):
         for label in label_list:
 
             # read each video in each label
-            for dirname, _, filenames in os.walk(os.path.join(TRAIN_RAWDATA_PATH, label)):
+            for dirname, _, filenames in os.walk(os.path.join(LAYER_1_TRAIN_RAWDATA_PATH, label)):
                 for filename in filenames:
                     print(type(filename))
                     exit(1)
@@ -64,11 +64,16 @@ if __name__ == '__main__':
     #     l.append(f(i))
 
     # print(l)
-    arr = np.array([[6.0], [6.0], [6.0], [6.0], [6.0], [6.0], [6.0], [6.0], [6.0], [6.0]])
-    arr = arr.reshape(arr.shape[0])
-    l = arr.tolist()
-    print(l)
-    print(int(max(set(l), key = l.count)))
+    arr = np.array([[91.67, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 88.33, 0], [0, 0, 0, 0, 0, 0, 75.83], [0, 0, 82.5, 0, 0, 0, 0], [0, 0, 0, 0, 95.83, 0, 0], [0, 0, 0, 100.0, 55.83, 0, 0], [0, 100.0, 0, 0, 0, 0, 0], [0, 100.0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 84.17]])
+    # arr = arr.reshape(arr.shape[0])
+    # l = arr.tolist
+    # l = [[91.67, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 88.33, 0], [0, 0, 0, 0, 0, 0, 75.83], [0, 0, 82.5, 0, 0, 0, 0], [0, 0, 0, 0, 95.83, 0, 0], [0, 0, 0, 100.0, 55.83, 0, 0], [0, 100.0, 0, 0, 0, 0, 0], [0, 100.0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 84.17]]
+    print(int(arr[0,-1]))
+    x = [0, 0, 0, 0, 0, 1.0, 0]
+    y = 0
+    x.append(y)
+    print(x)
+    # print(int(max(set(l), key = l.count)))
 
 
 
