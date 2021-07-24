@@ -23,9 +23,11 @@ tf.logging.set_verbosity(tf.logging.ERROR)
 class DataSet:
     def __init__(self, is_regenerate):
         if (is_regenerate):
+            print("Preparing layer1 clean data...")
             prepare_traindata_destination(LAYER_1_TRAIN_RAWDATA_PATH, LAYER_1_TRAIN_DATA_PATH)   
             clear_train_data(LAYER_1_TRAIN_DATA_PATH)
             extract_layer1_train_video()
+            print("Done preparing layer1 clean data")
 
         all_x, all_y = self.load_data_from_file()
 
@@ -35,12 +37,12 @@ class DataSet:
         
         self._divide_dataset(VALID_RATIO, TEST_RATIO)
         self._divide_train_data(NUMBER_OF_TREE)
-        print("self.train_x.shape", self.train_x.shape)
-        print("self.train_y.shape", self.train_y.shape)
-        print("self.train_x_set[0].shape", self.train_x_set[0].shape)
-        print("self.train_y_set[0].shape", self.train_y_set[0].shape)
-        print("self.test_x.shape", self.test_x.shape)
-        print("self.test_y.shape", self.test_y.shape)
+        print("all train_x.shape", self.train_x.shape)
+        print("all train_y.shape", self.train_y.shape)
+        print("each train_x_set.shape", self.train_x_set[0].shape)
+        print("each train_y_set[0].shape", self.train_y_set[0].shape)
+        print("test_x.shape", self.test_x.shape)
+        print("test_y.shape", self.test_y.shape)
         
         
     def load_data_from_file(self):
@@ -48,17 +50,14 @@ class DataSet:
         all_y = []
         
         # read each label in dataset
-        print("Reading data...", end="")
+        print("Reading data layer1 ...", end="")
         for _, label_list, _ in os.walk(LAYER_1_TRAIN_DATA_PATH):
             for label in label_list:
-                # print(label)
-
                 # read each video file in each label
                 for dirname, _, filenames in os.walk(os.path.join(LAYER_1_TRAIN_DATA_PATH, label)):
                     for filename in filenames:
                         if filename.endswith(DATA_EXTENSION):
                             data_path = os.path.join(dirname, filename)
-                            # print("\treading: " +data_path)
                             feature = np.load(data_path)
                             all_x.append(feature[:,:-1])
                             all_y.append(feature[:,-1])
@@ -311,7 +310,6 @@ class TrainingModel:
         result_dict = {"Step 1": 0, "Step 2": 0, "Step 3": 0, "Step 4": 0, "Step 5": 0, "Step 6": 0, "Step 7": 0, "Total": 0}
         order_lists = self.sess.run([self.predict_percent], {self.x:data})
         result_lists = order_lists[0].reshape([10,7])
-        # print(result_lists)
         for list in result_lists:
             result_dict["Total"] += 1 
             result = list[-1]
@@ -334,11 +332,13 @@ class TrainingModel:
 
 
 class TrainingForest:   
-    def __init__(self, number_of_tree, model_type, model_size, sparsity_level):
+    def __init__(self, number_of_tree, model_type, model_size, sparsity_level, epochs, log_period):
         self.number_of_tree = number_of_tree
         self.model_type = model_type
         self.sparsity_level = sparsity_level
         self.model_size = model_size
+        self.epochs = epochs
+        self.log_period = log_period
 
         # save result to file
         self.result_path = os.path.join("results", f"{self.model_type}")
@@ -357,10 +357,33 @@ class TrainingForest:
         result_map = {0: "Step 1", 1: "Step 2", 2: "Step 3", 3: "Step 4", 4: "Step 5", 5: "Step 6", 6: "Step 7"}
         return result_map[result]
 
-    def fit(self, dataset, epochs, log_period):
+    def _process_video(self, video_data):
+        highest_threshold = {"Step 1": 0., "Step 2": 0., "Step 3": 0., "Step 4": 0., "Step 5": 0., "Step 6": 0., "Step 7": 0.}
+        start = 0
+        end = start + WINDOWS_LENGTH
+        # sliding windows
+        while (end <= len(video_data)):
+            ## slice the windows
+            window_data = video_data[start:end, :]
+            ## reshape become data with batch = 1 for feed to model
+            window_data = window_data.reshape(window_data.shape[0], 1, window_data.shape[1])
+            
+            forest_final_predict, forest_percentage = self.evaluate(window_data)
+            write_log("\t", forest_percentage)
+            
+            for step in forest_percentage.keys():
+                if (highest_threshold[step] < forest_percentage[step]):
+                    highest_threshold[step] = forest_percentage[step]
+
+            start+=1
+            end+=1
+        
+        return (forest_final_predict, list(highest_threshold.values()))
+
+    def fit(self, dataset):
         for model_num in range(self.number_of_tree):
             model = TrainingModel(train_set_number=model_num, model_type = self.model_type,model_size=self.model_size,sparsity_level=self.sparsity_level)
-            model.fit(dataset, epochs=epochs,verbose=True, log_period=log_period)
+            model.fit(dataset, epochs=self.epochs,verbose=True, log_period=self.log_period)
 
             model.sess.close()
             tf.reset_default_graph()
@@ -404,8 +427,6 @@ class TrainingForest:
                           "Step 6": round(step6_pct, 4), 
                           "Step 7": round(step7_pct, 4)}
         forest_final_predict = max(forest_percent, key=lambda k: forest_percent[k])
-        # print("forest_percent: ", forest_percent)
-
         return (forest_final_predict, forest_percent)
 
     def predict(self, dataset):
@@ -440,20 +461,10 @@ class TrainingForest:
         print(f"Training forest accuracy: {accuracy}%")
 
 
-def run_layer_1_model_execute_task(mode=None):
-    dataset = DataSet(REGENERATE_LAYER1_DATA)
-    training_forest = TrainingForest(NUMBER_OF_TREE, MODEL_TYPE, MODEL_SIZE, MODEL_SPARSITY)
-    if (mode == "train"):
-        training_forest.fit(dataset, MODEL_EPOCH_NUM, MODEL_LOG_PERIOD)
-    elif (mode == "test"):
-        training_forest.predict(dataset)
-    
-    return training_forest
+def setup_layer1_model(max_iter):
+    return TrainingForest(NUMBER_OF_TREE, MODEL_TYPE, MODEL_SIZE, MODEL_SPARSITY, max_iter, MODEL_LOG_PERIOD)
+
+def setup_layer1_database():
+    return DataSet(REGENERATE_LAYER1_DATA)
 
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--mode',default="train")               # train/test
-    args = parser.parse_args()
-
-    run_layer_1_model_execute_task(args.mode)

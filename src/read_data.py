@@ -1,9 +1,12 @@
-from warnings import simplefilter 
+from warnings import simplefilter
+
+from skimage import feature 
 simplefilter(action='ignore', category=FutureWarning)
 
 import os
 import glob
 import argparse
+import sys
 
 from matplotlib import pyplot as plt
 import numpy as np # linear algebra
@@ -66,27 +69,14 @@ def extract_layer1_train_video():
                             # process each image
                             for img_counter in range(PROCESS_VIDEO_LENGTH):
                                 # read each frame
-                                ret, frame = cap.read()  
+                                is_continue, feature_vector = _get_next_frame(cap, img_counter)
 
-                                # only get frame of each FRAME_STEP frames
-                                if img_counter % FRAME_STEP != 0:
+                                if is_continue == None:
+                                    pass
+                                elif is_continue:
                                     continue
-                                
-                                if not ret:
-                                    frame_list=[]   # not using this sub_video 
+                                else:
                                     break
-                                    
-                                # extract feature from image
-                                ## TODO Adapt the parameter and preprocessing/scale the image
-                                resize_frame = cv2.resize(frame, (120, 180), interpolation = cv2.INTER_AREA)
-                                feature_vector, hog_img = hog(
-                                    resize_frame, pixels_per_cell=(14,14), 
-                                    cells_per_block=(2, 2), 
-                                    orientations=9, 
-                                    visualize=True, 
-                                    block_norm='L2-Hys',
-                                    feature_vector=True)
-
                                 # adding label (y) in data
                                 frame_feature = np.append(feature_vector, [label_map[label]] )
                                 frame_list.append(frame_feature)
@@ -106,6 +96,7 @@ def extract_layer2_train_video():
                     if filename.endswith(VIDEO_EXTENSION):
                         video_path = os.path.join(dirname, filename)
                         print("\tpreprocessing: " +video_path)
+                        sys.stdout.flush()
 
                         ## already preprocess:  
                         path = os.path.join(LAYER_2_TRAIN_DATA_PATH, video_label, os.path.splitext(filename)[0] + ".npy")
@@ -115,7 +106,6 @@ def extract_layer2_train_video():
                         # reading frame list
                         cap = cv2.VideoCapture(video_path)
 
-
                         frame_list = []
                         # Check if camera opened successfully
                         if (cap.isOpened()== False): 
@@ -124,35 +114,75 @@ def extract_layer2_train_video():
                         # Read until video is completed
                         while(cap.isOpened()):
                             # Capture frame-by-frame
-                            ret, frame = cap.read()
-                            if not ret:
-                                break
+                            is_continue, feature_vector = _get_next_frame(cap)
 
-                            # only get frame of each FRAME_STEP frames
-                            current_frame_num = int(cap.get(cv2.CAP_PROP_POS_FRAMES))
-                            # print(current_frame_num)
-                            if current_frame_num % FRAME_STEP != 0:
+                            if feature_vector != None:
+                                pass
+                            elif is_continue:
                                 continue
-
-                            # extract feature from frame
-                            resize_frame = cv2.resize(frame, (120, 180), interpolation = cv2.INTER_AREA)
-                            feature_vector, hog_img = hog(
-                                resize_frame, pixels_per_cell=(14,14), 
-                                cells_per_block=(2, 2), 
-                                orientations=9, 
-                                visualize=True, 
-                                block_norm='L2-Hys',
-                                feature_vector=True)
+                            else:
+                                break
 
                             frame_feature = np.append(feature_vector, video_map[video_label] )
                             # adding label (y) in data
                             frame_list.append(frame_feature)
 
-
                         if (len(frame_list) == 0):
                             print("This video part is corrupted, can not preprocess")
                         else:
                             np.save(path, frame_list)
+
+def extract_single_vid(video_path):
+    # reading frame list
+    cap = cv2.VideoCapture(video_path)
+    frame_list = []
+    # Check if camera opened successfully
+    if (cap.isOpened()== False): 
+        print("Error opening video file")
+    
+    # Read until video is completed
+    while(cap.isOpened()):
+        is_continue, feature_vector = _get_next_frame(cap)
+
+        if feature_vector != None:
+            pass
+        elif is_continue:
+            continue
+        else:
+            break
+        
+        frame_list.append(feature_vector)
+    
+    return frame_list
+
+
+def _get_next_frame(cap, counter=None):
+    if counter == None:
+        counter = int(cap.get(cv2.CAP_PROP_POS_FRAMES))
+
+    # only get frame of each FRAME_STEP frames
+    if counter % FRAME_STEP != 0:
+        return (True, None)
+    
+    # read each frame
+    ret, frame = cap.read()  
+
+    if not ret:
+        frame_list=[]   # not using this sub_video 
+        return (False, None)
+        
+    # extract feature from image
+    ## TODO Adapt the parameter and preprocessing/scale the image
+    resize_frame = cv2.resize(frame, (120, 180), interpolation = cv2.INTER_AREA)
+    feature_vector, hog_img = hog(
+        resize_frame, pixels_per_cell=(14,14), 
+        cells_per_block=(2, 2), 
+        orientations=9, 
+        visualize=True, 
+        block_norm='L2-Hys',
+        feature_vector=True)
+
+    return (None, feature_vector)
 
 def prepare_traindata_destination(rawdata_path, data_path):
     if (not os.path.exists(rawdata_path)):
@@ -192,21 +222,8 @@ def clear_train_data(data_path):
                         print("Deleted: " +video_path)
                         os.remove(video_path)
 
+def write_log(string):
+    print(string)
+    sys.stdout.flush()
 
-# def run_preprocess_data_task(mode):
-#     if (mode ==  "train"):
-#         prepare_traindata_destination(LAYER_1_TRAIN_RAWDATA_PATH, LAYER_1_TRAIN_DATA_PATH)   
-#         prepare_traindata_destination(LAYER_2_TRAIN_RAWDATA_PATH, LAYER_2_TRAIN_DATA_PATH)                
-#         clear_train_data(LAYER_1_TRAIN_DATA_PATH)
-#         clear_train_data(LAYER_2_TRAIN_DATA_PATH)
-#         extract_layer1_train_video()
-#     elif (mode == "test"):
-#         prepare_testdata_destination()
-#         extract_layer2_train_video()
-
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--mode',default="train")               # train/test
-    args = parser.parse_args()
 

@@ -1,4 +1,4 @@
-import os
+import os, random
 
 import numpy as np
 import pandas as pd
@@ -7,6 +7,7 @@ import tensorflow as tf
 import ltc_model as ltc
 from ctrnn_model import CTRNN, NODE, CTGRU
 
+from property import *
 def debug_train():
     sess=tf.Session()    
     sess.run(tf.global_variables_initializer())
@@ -57,23 +58,19 @@ def debug_read_data():
 
 if __name__ == '__main__':
     # debug_read_data()
-    # y = {'Step 1': '0.00%', 'Step 2': '0.00%', 'Step 3': '1.67%', 'Step 4': '0.00%', 'Step 5': '11.67%', 'Step 6': '78.33%', 'Step 7': '8.33%'}
-    # l = []
-    # f = lambda k : float(y[k][:-1])
-    # for i in y.keys():
-    #     l.append(f(i))
+    # video_data = np.load(os.path.join(LAYER_2_PROCESSED_DATA_PATH, "12_tree_lstm_output.npy"))
+    # print(video_data)
 
-    # print(l)
-    arr = np.array([[91.67, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 88.33, 0], [0, 0, 0, 0, 0, 0, 75.83], [0, 0, 82.5, 0, 0, 0, 0], [0, 0, 0, 0, 95.83, 0, 0], [0, 0, 0, 100.0, 55.83, 0, 0], [0, 100.0, 0, 0, 0, 0, 0], [0, 100.0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 84.17]])
-    # arr = arr.reshape(arr.shape[0])
-    # l = arr.tolist
-    # l = [[91.67, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 88.33, 0], [0, 0, 0, 0, 0, 0, 75.83], [0, 0, 82.5, 0, 0, 0, 0], [0, 0, 0, 0, 95.83, 0, 0], [0, 0, 0, 100.0, 55.83, 0, 0], [0, 100.0, 0, 0, 0, 0, 0], [0, 100.0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 84.17]]
-    print(int(arr[0,-1]))
-    x = [0, 0, 0, 0, 0, 1.0, 0]
-    y = 0
-    x.append(y)
-    print(x)
-    # print(int(max(set(l), key = l.count)))
+    skip_l = ["Step 3", "Step 4", "Step 5"]
+    step_l = ["Step 1", "Step 2", "Step 3 Left", "Step 3 Right", "Step 4", "Step 5"]
+
+    # skip_l = random.sample(step_l, 1)
+
+    print(skip_l)
+
+    for step in step_l:
+        if not any(skip in step for skip in skip_l):
+            print(step)
 
 
 

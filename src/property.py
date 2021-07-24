@@ -31,9 +31,9 @@ TEST_RATIO = 0.03
 BATCH_SIZE = 2
 NUMBER_OF_TREE = 12     # 12
 
-MODEL_TYPE = "lstm"       # type of Cell for network
+MODEL_TYPE = "node"       # type of Cell for network
 MODEL_SIZE = 10           # time step
-MODEL_EPOCH_NUM = 200     # iterative
+MODEL_EPOCH_NUM = 1     # iterative
 MODEL_LOG_PERIOD = 1      # number of iterative for each save
 MODEL_SPARSITY = 0.0
 ######
@@ -43,4 +43,6 @@ MODEL_SPARSITY = 0.0
 LAYER_2_MODEL_TYPE = "mlp"
 LAYER_2_VALID_RATIO = 0.2
 LAYER_2_TEST_RATIO = 0.2
+
+LAYER2_EPOCH_NUM = 500
 ######
