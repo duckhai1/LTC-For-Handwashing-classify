@@ -16,48 +16,73 @@ from layer1_model import *
 class VideoSet:
     def __init__(self, is_regenerate):
         self.training_forest = setup_layer1_model(MODEL_EPOCH_NUM)
-        self.save_data_path = os.path.join(LAYER_2_PROCESSED_DATA_PATH, f"{self.training_forest.number_of_tree}_tree_{self.training_forest.model_type}_output.npy")
         
-        if (is_regenerate):
-            write_log("Preparing layer2 clean data...")
-            prepare_traindata_destination(LAYER_2_TRAIN_RAWDATA_PATH, LAYER_2_TRAIN_DATA_PATH)  
-            prepare_processed_data_destination()
-            clear_train_data(LAYER_2_TRAIN_DATA_PATH)
-            extract_layer2_train_video()
-            write_log("Done preparing layer2 clean data")
-        if (not os.path.exists(self.save_data_path)):
-            write_log("Processing layer2 data...")
-            self.generate_data()
-            write_log("Done processing layer2 data")
+        self.clean_raw_data(is_regenerate)
 
         self.all_video_x, self.all_video_y = self.load_data_from_file()
         self._divide_dataset(LAYER_2_VALID_RATIO, LAYER_2_TEST_RATIO)
-            
+
+    def clean_raw_data(self, is_regenerate):
+        print("Preparing layer2 clean data...")
+        prepare_traindata_destination(LAYER_2_TRAIN_RAWDATA_PATH, LAYER_2_TRAIN_DATA_PATH)  
+        prepare_processed_data_destination()
+        if (is_regenerate):
+            clear_processed_data_destination()
+            clear_train_data(LAYER_2_TRAIN_DATA_PATH)
+        extract_layer2_train_video()
+        print("Done preparing layer2 clean data")
+
+        print("Processing layer2 data...")
+        self.process_data_path = os.path.join(LAYER_2_PROCESSED_DATA_PATH, f"{self.training_forest.number_of_tree}_tree_{self.training_forest.model_type}")
+        if (not os.path.exists(self.process_data_path)):
+            os.makedirs(self.process_data_path)
+        self.generate_data()
+        print("Done processing layer2 data")
+
     def load_data_from_file(self):
-        video_data = np.load(self.save_data_path)
-        all_x = video_data[:,:-1]
-        all_y = video_data[:,-1]
+        all_x = []
+        all_y = []
+        for dirname, _, filenames in os.walk(self.process_data_path):
+            for filename in filenames:
+                if filename.endswith(DATA_EXTENSION):
+                    data_path = os.path.join(dirname, filename)
+                    video_data = np.load(data_path)
+
+                    all_x.append(video_data[:-1])            
+                    all_y.append(video_data[-1])
+        
+        # Normalize data
+        all_x = np.array(all_x)
+        score_arr =  all_x[:,6::]
+        norm = np.linalg.norm(score_arr)
+        normal_array = score_arr/norm
+        all_x[:,6::] = normal_array
         return np.array(all_x), np.array(all_y)
 
     def generate_data(self):
-        all_data = []
         for _, video_label_list, _ in os.walk(LAYER_2_TRAIN_DATA_PATH):
             for video_label in video_label_list:
                 for dirname, _, filenames in os.walk(os.path.join(LAYER_2_TRAIN_DATA_PATH, video_label)):
                     # read each video file in each label
                     for filename in filenames:
                         if filename.endswith(DATA_EXTENSION):
-                            write_log(filename)
+                            print(filename)
+                            sys.stdout.flush()
+
+                            ## already preprocess:  
+                            save_path = os.path.join(self.process_data_path, f"{video_label}_{os.path.splitext(filename)[0]}.npy")
+                            if os.path.isfile(save_path):
+                                continue
                             
                             video_feature = np.load(os.path.join(dirname, filename))
                             _, data = self.training_forest._process_video(video_feature[:,:-1])
-                            data.append(float(video_feature[0,-1]))                          
-                            all_data.append(data)
-                            write_log(">>> ", data)
+                            feature_vector = [step[0] for step in data] + [step[1] for step in data]
                             
+                            feature_vector.append(float(video_feature[0,-1]))    
+                            print(">>> ", feature_vector)
 
-        # save to file
-        np.save(self.save_data_path, all_data)
+                            # save to file
+                            np.save(save_path, feature_vector)                      
 
 
     def _divide_dataset(self, valid_ratio, test_ratio):
@@ -77,8 +102,10 @@ class VideoSet:
 
 class SecondLayerModel:
     def __init__(self, model_type, max_iter):
-        if (model_type == "mlp"):
-            self.model = MLPClassifier(hidden_layer_sizes=(7,7,7), activation='relu', solver='adam', max_iter=max_iter)
+        self.model_type = model_type
+
+        if (self.model_type == "mlp"):
+            self.model = MLPClassifier(hidden_layer_sizes=(12,12,12), activation='relu', solver='adam', max_iter=max_iter)
 
     def fit(self, dataset):
         train_x = dataset.train_video_x
@@ -93,10 +120,14 @@ class SecondLayerModel:
     def predict(self, dataset):
         predict_test = self.model.predict(dataset.test_video_x)
         accuracy = 1 - (np.mean( predict_test != dataset.test_video_y ))
-        write_log("accuracy: ", accuracy)
-        
-        print(confusion_matrix(dataset.test_video_y, predict_test))
-        print(classification_report(dataset.test_video_y, predict_test))
+
+        result_path = os.path.join("results", MODEL_TYPE, f"{LAYER_2_MODEL_TYPE}_{LAYER2_EPOCH_NUM}")
+        with open(result_path,"a") as f:
+            f.write(f"accuracy: {accuracy}")
+            f.write(confusion_matrix(dataset.test_video_y, predict_test))
+            f.write(classification_report(dataset.test_video_y, predict_test))
+
+        print(">>> Accuracy: ", accuracy)
 
 def setup_layer2_model(max_iter):
     return SecondLayerModel(LAYER_2_MODEL_TYPE, max_iter)
@@ -104,15 +135,3 @@ def setup_layer2_model(max_iter):
 def setup_layer2_database():
     return VideoSet(REGENERATE_LAYER2_DATA)
 
-
-### DEBUG
-def test_single():
-    video_set = VideoSet(REGENERATE_LAYER2_DATA)
-    path = os.path.join(LAYER_2_TRAIN_DATA_PATH, "yes", "1.npy")
-    video_feature = np.load(path)
-    print(video_feature.shape)
-    
-    data = video_set._process_x(video_feature[:,:-1])
-    print(data)
-
-# test_single()

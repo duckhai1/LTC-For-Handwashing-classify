@@ -4,8 +4,6 @@ from skimage import feature
 simplefilter(action='ignore', category=FutureWarning)
 
 import os
-import glob
-import argparse
 import sys
 
 from matplotlib import pyplot as plt
@@ -38,6 +36,12 @@ label_map = {
 
 video_map = {"no": 0, "yes": 1}
 
+rotation_map = {
+    "rotate_0": None,
+    "rotate_90": cv2.ROTATE_90_COUNTERCLOCKWISE,
+    "rotate_180": cv2.ROTATE_180,
+    "rotate_270": cv2.ROTATE_90_CLOCKWISE
+}
 
 def extract_layer1_train_video():
     # read each label video
@@ -48,12 +52,14 @@ def extract_layer1_train_video():
             # read each video in each label
             for dirname, _, filenames in os.walk(os.path.join(LAYER_1_TRAIN_RAWDATA_PATH, label)):
                 for filename in filenames:
-                    if filename.endswith(VIDEO_EXTENSION):
-                        video_path = os.path.join(dirname, filename)
-                        print("\tpreprocessing: " +video_path)
+                    if not filename.endswith(VIDEO_EXTENSION):
+                        continue
 
+                    video_path = os.path.join(dirname, filename)
+                    print("\tpreprocessing: " +video_path)
+                    for rotate_direction in rotation_map.keys():
                         ## already preprocess yet:  
-                        feature_path = os.path.join(LAYER_1_TRAIN_DATA_PATH, label, os.path.splitext(filename)[0]+"_sv_0.npy")
+                        feature_path = os.path.join(LAYER_1_TRAIN_DATA_PATH, label, os.path.splitext(filename)[0]+"_sv_0_"+rotate_direction+".npy")
                         if os.path.isfile(feature_path):
                             continue
 
@@ -64,12 +70,12 @@ def extract_layer1_train_video():
                         # process each sub video
                         for sub_video_counter in range(no_sub_video):
                             frame_list = []
-                            path = os.path.join(LAYER_1_TRAIN_DATA_PATH, label, os.path.splitext(filename)[0]+"_sv_"+str(sub_video_counter)+".npy")
+                            path = os.path.join(LAYER_1_TRAIN_DATA_PATH, label, os.path.splitext(filename)[0]+"_sv_"+str(sub_video_counter)+"_"+rotate_direction+".npy")
                             print("\t\tconvert into: " + path)
                             # process each image
                             for img_counter in range(PROCESS_VIDEO_LENGTH):
                                 # read each frame
-                                is_continue, feature_vector = _get_next_frame(cap, img_counter)
+                                is_continue, feature_vector = _get_next_frame(cap, counter=img_counter, rotation_direction=rotation_map[rotate_direction])
 
                                 if is_continue == None:
                                     pass
@@ -105,6 +111,7 @@ def extract_layer2_train_video():
 
                         # reading frame list
                         cap = cv2.VideoCapture(video_path)
+                        frame_counter = 0
 
                         frame_list = []
                         # Check if camera opened successfully
@@ -114,9 +121,10 @@ def extract_layer2_train_video():
                         # Read until video is completed
                         while(cap.isOpened()):
                             # Capture frame-by-frame
-                            is_continue, feature_vector = _get_next_frame(cap)
+                            is_continue, feature_vector = _get_next_frame(cap, counter=frame_counter)
+                            frame_counter+=1
 
-                            if feature_vector != None:
+                            if feature_vector is not None:
                                 pass
                             elif is_continue:
                                 continue
@@ -135,6 +143,8 @@ def extract_layer2_train_video():
 def extract_single_vid(video_path):
     # reading frame list
     cap = cv2.VideoCapture(video_path)
+    frame_counter = 0
+
     frame_list = []
     # Check if camera opened successfully
     if (cap.isOpened()== False): 
@@ -143,8 +153,9 @@ def extract_single_vid(video_path):
     # Read until video is completed
     while(cap.isOpened()):
         is_continue, feature_vector = _get_next_frame(cap)
+        frame_counter+=1
 
-        if feature_vector != None:
+        if feature_vector is not None:
             pass
         elif is_continue:
             continue
@@ -156,10 +167,7 @@ def extract_single_vid(video_path):
     return frame_list
 
 
-def _get_next_frame(cap, counter=None):
-    if counter == None:
-        counter = int(cap.get(cv2.CAP_PROP_POS_FRAMES))
-
+def _get_next_frame(cap, counter, rotation_direction=None):
     # only get frame of each FRAME_STEP frames
     if counter % FRAME_STEP != 0:
         return (True, None)
@@ -171,9 +179,13 @@ def _get_next_frame(cap, counter=None):
         frame_list=[]   # not using this sub_video 
         return (False, None)
         
+    # preprocess each frame
+    resize_frame = cv2.resize(frame, (120, 180), interpolation = cv2.INTER_AREA)
+    if rotation_direction is not None:
+        resize_frame = cv2.rotate(resize_frame, rotation_direction)
+
     # extract feature from image
     ## TODO Adapt the parameter and preprocessing/scale the image
-    resize_frame = cv2.resize(frame, (120, 180), interpolation = cv2.INTER_AREA)
     feature_vector, hog_img = hog(
         resize_frame, pixels_per_cell=(14,14), 
         cells_per_block=(2, 2), 
@@ -205,6 +217,7 @@ def prepare_processed_data_destination():
     if ( not os.path.exists(LAYER_2_PROCESSED_DATA_PATH)): 
         os.makedirs(LAYER_2_PROCESSED_DATA_PATH)
 
+def clear_processed_data_destination():
     for dirname, _, filenames in os.walk(LAYER_2_PROCESSED_DATA_PATH):
         for filename in filenames:
             if filename.endswith(DATA_EXTENSION):
@@ -221,9 +234,3 @@ def clear_train_data(data_path):
                         video_path = os.path.join(dirname, filename)
                         print("Deleted: " +video_path)
                         os.remove(video_path)
-
-def write_log(string):
-    print(string)
-    sys.stdout.flush()
-
-

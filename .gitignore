@@ -1,14 +1,17 @@
-Registration for Bachelor Thesis.docx
-Khai_Registration for Bachelor Thesis-signed.pdf
 dataset.zip
 results/
 tf_sessions/
 .vscode/
 .idea/
+docs/
+data/
 *.mp4
 *.avi
 *.npy
 *.csv
+**/*.ini
+test.log
+generated_55TEMP_MPY_wvf_snd.mp3
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

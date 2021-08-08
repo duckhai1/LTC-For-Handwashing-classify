@@ -1,28 +1,42 @@
 # LTC-For-Hashwashing-classify
-Using handwashing dataset for assess LTC
+Using handwashing dataset for assess LTC comparing with other variation of RNN
 
 Dataset source: https://www.kaggle.com/realtimear/hand-wash-dataset
 
 LTC reference: https://github.com/raminmh/liquid_time_constant_networks/tree/master
 
 # How to run
-Go to src folder then:
-- Step 1: 
 
-> `python read_data.py`
+### Train model
 
-This command will invoke pre-processing data and store the clean data in "clean_data" folder. Each data is a matrix of size **(number_of_frame, number_of_feature)**. Where number_of_frame is determine by *PROCESS_VIDEO_LENGTH* (default 30) and *FRAME_STEP* (default 3), which means we take frame number 0,3,6,...,30 
+- Go to src folder then:
+    1. Train the inner layer (i.e layer1).
 
-- Step 2:
+        > `python main -l layer1`
 
-> `python train.py --model ltc_ex --epochs 200 > ../result/ltc_ex_200e.log`
+        Layer_1 input data shape is **(number_of_frame, batch_size, number_of_feature)**. 
+        
+        Where **number_of_frame** is determine by *PROCESS_VIDEO_LENGTH* and *FRAME_STEP*, which means we take frame number 0,3,6,...,30. **batch_size** is the number of data sample pass in 1 time. **number_of_feature** is size of vector to represent each frame
+    2. Train the outer layer (i.e layer2). 
 
-This command will start the training process and store result in log file at "result" folder. The accuracy is determine by assess each input video represent each step is label correctly. Here are some option model to train:
+        > `python main -l layer2`
 
-    - lstm
-    - ltc
-    - ltc_ex
-    - ltc_rk
-    - node
-    - ctgru
-    - ctrnn
+        Layer_2 input data shape is **(number_of_sample, 12)**.
+
+        Where the second axis is contain likelihood percentage of 6 steps and then score of 6 step in order.
+        
+- You can specify to enable train/test mode by --train / --test flag. Default both of them is true
+
+- The property list is in **/src/property.py**. 
+
+### Read result
+* The result of each network tree can be found in location: *results/**layer1_model_type**/**layer1_model_size**_**tree_id**/csv file*
+
+* The result of layer 1, full random forest is stored in: *results/**layer1_model_type**/forest_size**layer1_model_size**.csv
+
+* The result of layer 2 is stored in: *results/**layer1_model_type**/**layer2_model_type**_**layer2_epoch**.csv
+
+### Evaluate single data
+Using turn on the --eval flag and feed video path to --path
+
+> `python main -l <layer1/layer2> --eval true --path <video_path>`

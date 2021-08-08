@@ -8,8 +8,6 @@ import pickle
 import numpy as np
 import pandas as pd
 import tensorflow as tf
-import argparse
-from tqdm import tqdm
 
 import ltc_model as ltc
 from ctrnn_model import CTRNN, NODE, CTGRU
@@ -22,12 +20,7 @@ tf.logging.set_verbosity(tf.logging.ERROR)
 
 class DataSet:
     def __init__(self, is_regenerate):
-        if (is_regenerate):
-            print("Preparing layer1 clean data...")
-            prepare_traindata_destination(LAYER_1_TRAIN_RAWDATA_PATH, LAYER_1_TRAIN_DATA_PATH)   
-            clear_train_data(LAYER_1_TRAIN_DATA_PATH)
-            extract_layer1_train_video()
-            print("Done preparing layer1 clean data")
+        self.clean_raw_data(is_regenerate)
 
         all_x, all_y = self.load_data_from_file()
 
@@ -39,12 +32,21 @@ class DataSet:
         self._divide_train_data(NUMBER_OF_TREE)
         print("all train_x.shape", self.train_x.shape)
         print("all train_y.shape", self.train_y.shape)
-        print("each train_x_set.shape", self.train_x_set[0].shape)
-        print("each train_y_set[0].shape", self.train_y_set[0].shape)
+        print("each train_x_set shape", self.train_x_set[0].shape)
+        print("each train_y_set shape", self.train_y_set[0].shape)
         print("test_x.shape", self.test_x.shape)
         print("test_y.shape", self.test_y.shape)
         
+    def clean_raw_data(self, is_regenerate):
+        print("Preparing layer1 clean data...")
+        prepare_traindata_destination(LAYER_1_TRAIN_RAWDATA_PATH, LAYER_1_TRAIN_DATA_PATH)   
+
+        if (is_regenerate):
+            clear_train_data(LAYER_1_TRAIN_DATA_PATH)
         
+        extract_layer1_train_video()
+        print("Done preparing layer1 clean data")
+
     def load_data_from_file(self):
         all_x = []
         all_y = []
@@ -122,7 +124,7 @@ class TrainingModel:
         self.learning_rate = 0.001
 
         self.constrain_op = []
-        self.x = tf.placeholder(dtype=tf.float32,shape=[None,None,2772])        ## TODO hyperparameter
+        self.x = tf.placeholder(dtype=tf.float32,shape=[None,None,2772])
         self.target_y = tf.placeholder(dtype=tf.int32,shape=[None,None])
         head = self.x
 
@@ -158,7 +160,7 @@ class TrainingModel:
         if(self.sparsity_level > 0):
             self.constrain_op.extend(self._get_sparsity_ops())
 
-        self.y = tf.layers.Dense(7,activation=None)(head)
+        self.y = tf.layers.Dense(6,activation=None)(head)
         # print("logit shape: ",str(self.y.shape))
         self.loss = tf.reduce_mean(tf.losses.sparse_softmax_cross_entropy(
             labels = self.target_y,
@@ -176,8 +178,8 @@ class TrainingModel:
         self.sess.run(tf.global_variables_initializer())
         self.saver = tf.train.Saver()
 
-        self.result_path = os.path.join("results", f"{self.model_type}")
-        self.result_file = os.path.join("results", f"{self.model_type}","{}_{}.csv".format(self.model_size,train_set_number))
+        self.result_path = os.path.join("results", f"{self.model_type}_{NUMBER_OF_TREE}")
+        self.result_file = os.path.join("results", f"{self.model_type}_{NUMBER_OF_TREE}","{}_{}.csv".format(self.model_size,train_set_number))
         if(not os.path.exists(self.result_path)):
             os.makedirs(self.result_path)
         if(not os.path.isfile(self.result_file)):
@@ -185,7 +187,7 @@ class TrainingModel:
                 f.write("epoch, train loss, train accuracy, valid loss, valid accuracy, test loss, test accuracy\n")
 
         # store the save session
-        self.checkpoint_path = os.path.join("tf_sessions",f"{self.model_type}", f"model-{train_set_number}")
+        self.checkpoint_path = os.path.join("tf_sessions",f"{self.model_type}_{NUMBER_OF_TREE}", f"model-{train_set_number}")
         self.backup_file_name = f"{train_set_number}-{self.model_type}-size-{self.model_size}"
         self.load_backup()
         if(not os.path.exists(self.checkpoint_path)):
@@ -224,7 +226,7 @@ class TrainingModel:
         self.saver.restore(self.sess, os.path.join(self.checkpoint_path, self.backup_file_name))
 
     def load_backup(self):
-        if (os.path.exists(self.checkpoint_path)): 
+        if (os.path.exists(os.path.join(self.checkpoint_path, f"{self.backup_file_name}.meta"))): 
             #First let's load meta graph and restore weights
             saver = tf.train.import_meta_graph(os.path.join(self.checkpoint_path, f"{self.backup_file_name}.meta"))
             saver.restore(self.sess,tf.train.latest_checkpoint(self.checkpoint_path))
@@ -307,26 +309,34 @@ class TrainingModel:
                 f.write("="*110 + "\n")
 
     def evaluate(self, data):
-        result_dict = {"Step 1": 0, "Step 2": 0, "Step 3": 0, "Step 4": 0, "Step 5": 0, "Step 6": 0, "Step 7": 0, "Total": 0}
-        order_lists = self.sess.run([self.predict_percent], {self.x:data})
-        result_lists = order_lists[0].reshape([10,7])
-        for list in result_lists:
+        result_dict = {"Step 1": [0, 0.], "Step 2": [0, 0.], "Step 3": [0, 0.], "Step 4": [0, 0.], "Step 5": [0, 0.], "Step 6": [0, 0.], "Total": 0}
+        order_lists, score_lists = self.sess.run([self.predict_percent, self.y], {self.x:data})
+        order_lists = order_lists.reshape([10,6])
+        score_lists = score_lists.reshape([10,6])
+
+        for o_list, s_list in zip(order_lists, score_lists):
             result_dict["Total"] += 1 
-            result = list[-1]
-            if result == 0:
-                result_dict["Step 1"] += 1 
-            elif result == 1:
-                result_dict["Step 2"] += 1 
-            elif result == 2:
-                result_dict["Step 3"] += 1 
-            elif result == 3:
-                result_dict["Step 4"] += 1 
-            elif result == 4:
-                result_dict["Step 5"] += 1 
-            elif result == 5:
-                result_dict["Step 6"] += 1 
-            elif result == 6:
-                result_dict["Step 7"] += 1 
+            target = o_list[-1]
+            score = s_list[target]
+
+            if target == 0:
+                result_dict["Step 1"][0] += 1 
+                result_dict["Step 1"][1] += score
+            elif target == 1:
+                result_dict["Step 2"][0] += 1 
+                result_dict["Step 2"][1] += score
+            elif target == 2:
+                result_dict["Step 3"][0] += 1 
+                result_dict["Step 3"][1] += score
+            elif target == 3:
+                result_dict["Step 4"][0] += 1 
+                result_dict["Step 4"][1] += score
+            elif target == 4:
+                result_dict["Step 5"][0] += 1 
+                result_dict["Step 5"][1] += score
+            elif target == 5:
+                result_dict["Step 6"][0] += 1
+                result_dict["Step 6"][1] += score
 
         return result_dict
 
@@ -341,24 +351,24 @@ class TrainingForest:
         self.log_period = log_period
 
         # save result to file
-        self.result_path = os.path.join("results", f"{self.model_type}")
-        self.result_file = os.path.join("results", f"{self.model_type}","forest_size{}.csv".format(self.model_size))
+        self.result_path = os.path.join("results", f"{self.model_type}_{NUMBER_OF_TREE}")
+        self.result_file = os.path.join("results", f"{self.model_type}_{NUMBER_OF_TREE}","forest_size{}.csv".format(self.model_size))
         if(not os.path.exists(self.result_path)):
             os.makedirs(self.result_path)
         if(not os.path.isfile(self.result_file)):
             with open(self.result_file,"w") as f:
-                f.write("target, step 1, step 2, step 3, step 4, step 5, step 6, step 7\n")
+                f.write("target, step_1, step_2, step_3, step_4, step_5, step_6, score_1, score_2, score_3, score_4, score_5, score_6\n")
 
     def _map_test_result(self, result_list):
         # convert to list of result 
         result_list = result_list.reshape(result_list.shape[0]).tolist()
         # get the max frequent result
         result = int(max(set(result_list), key = result_list.count))
-        result_map = {0: "Step 1", 1: "Step 2", 2: "Step 3", 3: "Step 4", 4: "Step 5", 5: "Step 6", 6: "Step 7"}
+        result_map = {0: "Step 1", 1: "Step 2", 2: "Step 3", 3: "Step 4", 4: "Step 5", 5: "Step 6"}
         return result_map[result]
 
     def _process_video(self, video_data):
-        highest_threshold = {"Step 1": 0., "Step 2": 0., "Step 3": 0., "Step 4": 0., "Step 5": 0., "Step 6": 0., "Step 7": 0.}
+        highest_threshold = {"Step 1": [0., 0.], "Step 2": [0., 0.], "Step 3": [0., 0.], "Step 4": [0., 0.], "Step 5": [0., 0.], "Step 6": [0., 0.]}
         start = 0
         end = start + WINDOWS_LENGTH
         # sliding windows
@@ -369,11 +379,12 @@ class TrainingForest:
             window_data = window_data.reshape(window_data.shape[0], 1, window_data.shape[1])
             
             forest_final_predict, forest_percentage = self.evaluate(window_data)
-            write_log("\t", forest_percentage)
+            print("\t", forest_percentage)
             
             for step in forest_percentage.keys():
-                if (highest_threshold[step] < forest_percentage[step]):
-                    highest_threshold[step] = forest_percentage[step]
+                if (highest_threshold[step][0] < forest_percentage[step][0]):
+                    highest_threshold[step][0] = forest_percentage[step][0]
+                    highest_threshold[step][1] = forest_percentage[step][1]
 
             start+=1
             end+=1
@@ -392,41 +403,35 @@ class TrainingForest:
         print("Finish training model, the last result can be found in 'result' folder")
 
     def evaluate(self, data):
-        forest_result = {"Step 1": 0, "Step 2": 0, "Step 3": 0, "Step 4": 0, "Step 5": 0, "Step 6": 0, "Step 7": 0, "Total": 0}
+        forest_result = {"Step 1": [0, 0.], "Step 2": [0, 0.], "Step 3": [0, 0.], "Step 4": [0, 0.], "Step 5": [0, 0.], "Step 6": [0, 0.], "Total": 0}
 
         for model_num in range(self.number_of_tree):
             model = TrainingModel(train_set_number=model_num, model_type = self.model_type,model_size=self.model_size,sparsity_level=self.sparsity_level)
             tree_result = model.evaluate(data)
 
             # Adding result
-            forest_result["Step 1"] += tree_result["Step 1"]
-            forest_result["Step 2"] += tree_result["Step 2"]
-            forest_result["Step 3"] += tree_result["Step 3"]
-            forest_result["Step 4"] += tree_result["Step 4"]
-            forest_result["Step 5"] += tree_result["Step 5"]
-            forest_result["Step 6"] += tree_result["Step 6"]
-            forest_result["Step 7"] += tree_result["Step 7"]
-            forest_result["Total"] += tree_result["Total"]
+            for step in forest_result.keys():
+                if step == "Total":
+                    forest_result[step] += tree_result[step]
+                else:
+                    forest_result[step][0] += tree_result[step][0]
+                    forest_result[step][1] += tree_result[step][1]
 
             model.sess.close()
             tf.reset_default_graph()
 
-        step1_pct = forest_result["Step 1"]/forest_result["Total"]
-        step2_pct = forest_result["Step 2"]/forest_result["Total"]
-        step3_pct = forest_result["Step 3"]/forest_result["Total"]
-        step4_pct = forest_result["Step 4"]/forest_result["Total"]
-        step5_pct = forest_result["Step 5"]/forest_result["Total"]
-        step6_pct = forest_result["Step 6"]/forest_result["Total"]
-        step7_pct = forest_result["Step 7"]/forest_result["Total"]
-
-        forest_percent = {"Step 1": round(step1_pct, 4), 
-                          "Step 2": round(step2_pct, 4), 
-                          "Step 3": round(step3_pct, 4), 
-                          "Step 4": round(step4_pct, 4),  
-                          "Step 5": round(step5_pct, 4),  
-                          "Step 6": round(step6_pct, 4), 
-                          "Step 7": round(step7_pct, 4)}
-        forest_final_predict = max(forest_percent, key=lambda k: forest_percent[k])
+        forest_percent = {}
+        for step in forest_result.keys():
+            if step == "Total":
+                continue
+            step_pct = forest_result[step][0] / forest_result["Total"]
+            if forest_result[step][0] == 0:
+                step_score = 0
+            else:
+                step_score = forest_result[step][1] / forest_result[step][0]
+            forest_percent[step] = [round(step_pct, 4), step_score]
+ 
+        forest_final_predict = max(forest_percent, key=lambda k: forest_percent[k][0])
         return (forest_final_predict, forest_percent)
 
     def predict(self, dataset):
@@ -439,15 +444,20 @@ class TrainingForest:
 
             # save to file
             with open(self.result_file,"a") as f:
-                f.write("{}, {}, {}, {}, {}, {}, {}, {}\n".format(
+                f.write("{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}\n".format(
                 test_y,
-                forest_percent["Step 1"],
-                forest_percent["Step 2"],
-                forest_percent["Step 3"],
-                forest_percent["Step 4"],
-                forest_percent["Step 5"],
-                forest_percent["Step 6"],
-                forest_percent["Step 7"]
+                forest_percent["Step 1"][0],
+                forest_percent["Step 2"][0],
+                forest_percent["Step 3"][0],
+                forest_percent["Step 4"][0],
+                forest_percent["Step 5"][0],
+                forest_percent["Step 6"][0],
+                forest_percent["Step 1"][1],
+                forest_percent["Step 2"][1],
+                forest_percent["Step 3"][1],
+                forest_percent["Step 4"][1],
+                forest_percent["Step 5"][1],
+                forest_percent["Step 6"][1]
                 ))
 
             if (forest_final_predict == test_y):
@@ -466,5 +476,4 @@ def setup_layer1_model(max_iter):
 
 def setup_layer1_database():
     return DataSet(REGENERATE_LAYER1_DATA)
-
 
