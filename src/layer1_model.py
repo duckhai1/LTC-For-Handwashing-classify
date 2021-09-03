@@ -272,7 +272,7 @@ class TrainingModel:
 
             if(verbose and e%log_period == 0):
                 with open(self.result_file,"a") as f:
-                    f.write("{:03d}, {:0.2f}, {:0.2f}, {:0.2f}, {:0.2f}, {:0.2f}, {:0.2f}\n".format(
+                    f.write("{:03d},{:0.2f},{:0.2f},{:0.2f},{:0.2f},{:0.2f},{:0.2f}\n".format(
                     e,
                     np.mean(losses),np.mean(accs)*100,
                     valid_loss,valid_acc*100,
@@ -306,7 +306,7 @@ class TrainingModel:
                 valid_loss,valid_acc,
                 test_loss,test_acc
                 ))
-                f.write("="*110 + "\n")
+                f.write("#" + "="*110 + "\n")
 
     def evaluate(self, data):
         result_dict = {"Step 1": [0, 0.], "Step 2": [0, 0.], "Step 3": [0, 0.], "Step 4": [0, 0.], "Step 5": [0, 0.], "Step 6": [0, 0.], "Total": 0}
@@ -444,7 +444,7 @@ class TrainingForest:
 
             # save to file
             with open(self.result_file,"a") as f:
-                f.write("{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}\n".format(
+                f.write("{},{},{},{},{},{},{},{},{},{},{},{},{}\n".format(
                 test_y,
                 forest_percent["Step 1"][0],
                 forest_percent["Step 2"][0],
@@ -466,7 +466,7 @@ class TrainingForest:
         accuracy = correct_predict/total_test_data * 100
         with open(self.result_file,"a") as f:
             f.write(f"# Training forest accuracy: {accuracy}%")
-            f.write("="*100)
+            f.write("#" + "="*100)
             
         print(f"Training forest accuracy: {accuracy}%")
 

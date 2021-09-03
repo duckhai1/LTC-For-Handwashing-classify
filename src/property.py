@@ -26,10 +26,10 @@ WINDOWS_LENGTH = int(PROCESS_VIDEO_LENGTH / FRAME_STEP)             # length of 
 
 ### Layer 1 Model hyperparameter ###
 ######
-VALID_RATIO = 0.06                                                  # Valid percentage when dividing dataset
-TEST_RATIO = 0.03                                                   # Test percentage when dividing dataset
+VALID_RATIO = 0.2                                                   # Valid percentage when dividing dataset
+TEST_RATIO = 0.1                                                    # Test percentage when dividing dataset
 BATCH_SIZE = 64                                                     # Batch size fitting in network
-NUMBER_OF_TREE = 12                                                 # Number of tree in random forest (default: 12)
+NUMBER_OF_TREE = 3                                                  # Number of tree in random forest (default: 3)
 
 MODEL_TYPE = "ltc"                                                  # type of Cell for network (lstm / ltc / ltc_ex / ltc_rk / node / ctgru / ctrnn)
 MODEL_SIZE = 10                                                     # time step
@@ -44,5 +44,7 @@ LAYER_2_MODEL_TYPE = "mlp"                                          # Type of la
 LAYER_2_VALID_RATIO = 0.2                                           # Valid percentage when dividing dataset
 LAYER_2_TEST_RATIO = 0.2                                            # Test percentage when dividing dataset
 
-LAYER2_EPOCH_NUM = 500                                              # Number of epoch when training layer2
+LAYER2_EPOCH_NUM = 500                                              # Number of epoch when training layer2 (identity, logistic, tanh, relu)
+LAYER2_ACTIVATION = 'relu'                                          # Activation function type for MLP (lbfgs, sgd, adam)
+LAYER2_SOLVER = 'adam'
 ######

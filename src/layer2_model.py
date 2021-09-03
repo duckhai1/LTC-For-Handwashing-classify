@@ -66,12 +66,13 @@ class VideoSet:
                     # read each video file in each label
                     for filename in filenames:
                         if filename.endswith(DATA_EXTENSION):
-                            print(filename)
+                            print(f"processing {video_label}_{os.path.splitext(filename)[0]}.npy")
                             sys.stdout.flush()
 
                             ## already preprocess:  
                             save_path = os.path.join(self.process_data_path, f"{video_label}_{os.path.splitext(filename)[0]}.npy")
                             if os.path.isfile(save_path):
+                                print("skip")
                                 continue
                             
                             video_feature = np.load(os.path.join(dirname, filename))
@@ -101,11 +102,13 @@ class VideoSet:
 
 
 class SecondLayerModel:
-    def __init__(self, model_type, max_iter):
+    def __init__(self, model_type, max_iter, activation_type, solver_type):
         self.model_type = model_type
+        self.activation_type = activation_type
+        self.solver_type = solver_type
 
         if (self.model_type == "mlp"):
-            self.model = MLPClassifier(hidden_layer_sizes=(12,12,12), activation='relu', solver='adam', max_iter=max_iter)
+            self.model = MLPClassifier(hidden_layer_sizes=(12,6,12), activation=self.activation_type, solver=self.solver_type, max_iter=max_iter)
 
     def fit(self, dataset):
         train_x = dataset.train_video_x
@@ -121,16 +124,18 @@ class SecondLayerModel:
         predict_test = self.model.predict(dataset.test_video_x)
         accuracy = 1 - (np.mean( predict_test != dataset.test_video_y ))
 
-        result_path = os.path.join("results", MODEL_TYPE, f"{LAYER_2_MODEL_TYPE}_{LAYER2_EPOCH_NUM}")
-        with open(result_path,"a") as f:
+        result_path = os.path.join("results", f"{MODEL_TYPE}_{NUMBER_OF_TREE}", f"{LAYER_2_MODEL_TYPE}_{LAYER2_EPOCH_NUM}")
+        with open(result_path,"w") as f:
             f.write(f"accuracy: {accuracy}")
-            f.write(confusion_matrix(dataset.test_video_y, predict_test))
-            f.write(classification_report(dataset.test_video_y, predict_test))
+            f.write("\n")
+            f.write(str(confusion_matrix(dataset.test_video_y, predict_test)))
+            f.write("\n")
+            f.write(str(classification_report(dataset.test_video_y, predict_test)))
 
         print(">>> Accuracy: ", accuracy)
 
 def setup_layer2_model(max_iter):
-    return SecondLayerModel(LAYER_2_MODEL_TYPE, max_iter)
+    return SecondLayerModel(LAYER_2_MODEL_TYPE, max_iter, LAYER2_ACTIVATION, LAYER2_SOLVER)
 
 def setup_layer2_database():
     return VideoSet(REGENERATE_LAYER2_DATA)
