@@ -33,7 +33,7 @@ class VideoSet:
         print("Done preparing layer2 clean data")
 
         print("Processing layer2 data...")
-        self.process_data_path = os.path.join(LAYER_2_PROCESSED_DATA_PATH, f"{self.training_forest.number_of_tree}_tree_{self.training_forest.model_type}")
+        self.process_data_path = os.path.join(LAYER_2_PROCESSED_DATA_PATH, SAVE_LOCATION_NAME)
         if (not os.path.exists(self.process_data_path)):
             os.makedirs(self.process_data_path)
         self.generate_data()
@@ -124,7 +124,7 @@ class SecondLayerModel:
         predict_test = self.model.predict(dataset.test_video_x)
         accuracy = 1 - (np.mean( predict_test != dataset.test_video_y ))
 
-        result_path = os.path.join("results", f"{MODEL_TYPE}_{NUMBER_OF_TREE}", f"{LAYER_2_MODEL_TYPE}_{LAYER2_EPOCH_NUM}")
+        result_path = os.path.join("results", SAVE_LOCATION_NAME, f"{LAYER_2_MODEL_TYPE}_{LAYER2_EPOCH_NUM}_result.txt")
         with open(result_path,"w") as f:
             f.write(f"accuracy: {accuracy}")
             f.write("\n")

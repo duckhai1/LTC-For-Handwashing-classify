@@ -161,7 +161,7 @@ class TrainingModel:
             self.constrain_op.extend(self._get_sparsity_ops())
 
         self.y = tf.layers.Dense(6,activation=None)(head)
-        # print("logit shape: ",str(self.y.shape))
+        print("logit y shape: ",str(self.y.shape))
         self.loss = tf.reduce_mean(tf.losses.sparse_softmax_cross_entropy(
             labels = self.target_y,
             logits = self.y,
@@ -178,8 +178,8 @@ class TrainingModel:
         self.sess.run(tf.global_variables_initializer())
         self.saver = tf.train.Saver()
 
-        self.result_path = os.path.join("results", f"{self.model_type}_{NUMBER_OF_TREE}")
-        self.result_file = os.path.join("results", f"{self.model_type}_{NUMBER_OF_TREE}","{}_{}.csv".format(self.model_size,train_set_number))
+        self.result_path = os.path.join("results", SAVE_LOCATION_NAME)
+        self.result_file = os.path.join("results", SAVE_LOCATION_NAME,f"{self.model_size}_{self.model_type}_{train_set_number}.csv")
         if(not os.path.exists(self.result_path)):
             os.makedirs(self.result_path)
         if(not os.path.isfile(self.result_file)):
@@ -187,7 +187,7 @@ class TrainingModel:
                 f.write("epoch, train loss, train accuracy, valid loss, valid accuracy, test loss, test accuracy\n")
 
         # store the save session
-        self.checkpoint_path = os.path.join("tf_sessions",f"{self.model_type}_{NUMBER_OF_TREE}", f"model-{train_set_number}")
+        self.checkpoint_path = os.path.join("tf_sessions",SAVE_LOCATION_NAME, f"model-{train_set_number}")
         self.backup_file_name = f"{train_set_number}-{self.model_type}-size-{self.model_size}"
         self.load_backup()
         if(not os.path.exists(self.checkpoint_path)):
@@ -285,11 +285,12 @@ class TrainingModel:
                     test_loss,test_acc*100
                 ))
 
+                with open(os.path.join(self.checkpoint_path, f"{self.backup_file_name}.pickle"), "wb") as bk_f:
+                    pickle.dump([self.best_valid_accuracy, self.best_valid_stats], bk_f)
+
             if(e > 0 and (not np.isfinite(np.mean(losses)))):
                 break
 
-        with open(os.path.join(self.checkpoint_path, f"{self.backup_file_name}.pickle"), "wb") as bk_f:
-            pickle.dump([self.best_valid_accuracy, self.best_valid_stats], bk_f)
 
         if (have_new_best):
             best_epoch,train_loss,train_acc,valid_loss,valid_acc,test_loss,test_acc = self.best_valid_stats
@@ -342,17 +343,17 @@ class TrainingModel:
 
 
 class TrainingForest:   
-    def __init__(self, number_of_tree, model_type, model_size, sparsity_level, epochs, log_period):
+    def __init__(self, number_of_tree, tree_list, model_size, sparsity_level, epochs, log_period):
         self.number_of_tree = number_of_tree
-        self.model_type = model_type
+        self.tree_list = tree_list
         self.sparsity_level = sparsity_level
         self.model_size = model_size
         self.epochs = epochs
         self.log_period = log_period
 
         # save result to file
-        self.result_path = os.path.join("results", f"{self.model_type}_{NUMBER_OF_TREE}")
-        self.result_file = os.path.join("results", f"{self.model_type}_{NUMBER_OF_TREE}","forest_size{}.csv".format(self.model_size))
+        self.result_path = os.path.join("results", SAVE_LOCATION_NAME)
+        self.result_file = os.path.join("results", SAVE_LOCATION_NAME,"forest_size{}.csv".format(self.model_size))
         if(not os.path.exists(self.result_path)):
             os.makedirs(self.result_path)
         if(not os.path.isfile(self.result_file)):
@@ -393,7 +394,7 @@ class TrainingForest:
 
     def fit(self, dataset):
         for model_num in range(self.number_of_tree):
-            model = TrainingModel(train_set_number=model_num, model_type = self.model_type,model_size=self.model_size,sparsity_level=self.sparsity_level)
+            model = TrainingModel(train_set_number=model_num, model_type = self.tree_list[model_num], model_size=self.model_size, sparsity_level=self.sparsity_level)
             model.fit(dataset, epochs=self.epochs,verbose=True, log_period=self.log_period)
 
             model.sess.close()
@@ -406,7 +407,7 @@ class TrainingForest:
         forest_result = {"Step 1": [0, 0.], "Step 2": [0, 0.], "Step 3": [0, 0.], "Step 4": [0, 0.], "Step 5": [0, 0.], "Step 6": [0, 0.], "Total": 0}
 
         for model_num in range(self.number_of_tree):
-            model = TrainingModel(train_set_number=model_num, model_type = self.model_type,model_size=self.model_size,sparsity_level=self.sparsity_level)
+            model = TrainingModel(train_set_number=model_num, model_type = self.tree_list[model_num], model_size=self.model_size, sparsity_level=self.sparsity_level)
             tree_result = model.evaluate(data)
 
             # Adding result
@@ -472,7 +473,7 @@ class TrainingForest:
 
 
 def setup_layer1_model(max_iter):
-    return TrainingForest(NUMBER_OF_TREE, MODEL_TYPE, MODEL_SIZE, MODEL_SPARSITY, max_iter, MODEL_LOG_PERIOD)
+    return TrainingForest(NUMBER_OF_TREE, TREE_TYPE_LIST, MODEL_SIZE, MODEL_SPARSITY, max_iter, MODEL_LOG_PERIOD)
 
 def setup_layer1_database():
     return DataSet(REGENERATE_LAYER1_DATA)
