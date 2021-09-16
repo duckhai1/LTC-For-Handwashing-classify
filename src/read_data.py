@@ -152,7 +152,7 @@ def extract_single_vid(video_path):
     
     # Read until video is completed
     while(cap.isOpened()):
-        is_continue, feature_vector = _get_next_frame(cap)
+        is_continue, feature_vector = _get_next_frame(cap, frame_counter)
         frame_counter+=1
 
         if feature_vector is not None:
@@ -180,14 +180,14 @@ def _get_next_frame(cap, counter, rotation_direction=None):
         return (False, None)
         
     # preprocess each frame
-    resize_frame = cv2.resize(frame, (120, 180), interpolation = cv2.INTER_AREA)
+    resize_frame = cv2.resize(frame, (180, 120), interpolation = cv2.INTER_AREA)
     if rotation_direction is not None:
         resize_frame = cv2.rotate(resize_frame, rotation_direction)
 
     # extract feature from image
     ## TODO Adapt the parameter and preprocessing/scale the image
     feature_vector, hog_img = hog(
-        resize_frame, pixels_per_cell=(14,14), 
+        resize_frame, pixels_per_cell=(15,15), 
         cells_per_block=(2, 2), 
         orientations=9, 
         visualize=True, 

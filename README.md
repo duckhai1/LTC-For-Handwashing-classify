@@ -29,14 +29,14 @@ LTC reference: https://github.com/raminmh/liquid_time_constant_networks/tree/mas
 
 - The property list is in **/src/property.py**. 
 
+### Evaluate whole project with single data  
+Using turn on the --eval flag and feed video path to --path
+
+> `python main --eval true --path <video_path>`
+
 ### Read result
-* The result of each network tree can be found in location: *results/**layer1_model_type**/**layer1_model_size**_**tree_id**/csv file*
+* The result of each network tree can be found in location: *results/**layer1_model_type**/**layer1_model_size**_**layer1_model_type**_**tree_id**/csv file*
 
 * The result of layer 1, full random forest is stored in: *results/**layer1_model_type**/forest_size**layer1_model_size**.csv
 
-* The result of layer 2 is stored in: *results/**layer1_model_type**/**layer2_model_type**_**layer2_epoch**.csv
-
-### Evaluate single data
-Using turn on the --eval flag and feed video path to --path
-
-> `python main -l <layer1/layer2> --eval true --path <video_path>`
+* The result of layer 2 is stored in: *results/**layer1_model_type**/**layer2_model_type**_**layer2_epoch**_result.csv

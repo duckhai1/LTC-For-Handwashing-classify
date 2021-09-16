@@ -5,8 +5,10 @@ import numpy as np
 import pandas as pd 
 import tensorflow as tf
 from sklearn.neural_network import MLPClassifier
-from sklearn.metrics import classification_report,confusion_matrix
+from sklearn import preprocessing
+from sklearn.metrics import classification_report,confusion_matrix, plot_roc_curve, plot_precision_recall_curve
 import sys
+import pickle
 tf.logging.set_verbosity(tf.logging.ERROR)
 
 ## import config property
@@ -53,10 +55,9 @@ class VideoSet:
         
         # Normalize data
         all_x = np.array(all_x)
-        score_arr =  all_x[:,6::]
-        norm = np.linalg.norm(score_arr)
-        normal_array = score_arr/norm
-        all_x[:,6::] = normal_array
+        score_arr =  all_x[:,6:]
+        normalized_score = preprocessing.normalize(score_arr)
+        all_x[:,6:] = normalized_score
         return np.array(all_x), np.array(all_y)
 
     def generate_data(self):
@@ -88,7 +89,7 @@ class VideoSet:
 
     def _divide_dataset(self, valid_ratio, test_ratio):
         total_seqs = self.all_video_x.shape[0]
-        permutation = np.random.RandomState(7791).permutation(total_seqs)
+        permutation = np.random.permutation(total_seqs)
         valid_size = int(valid_ratio*total_seqs)
         test_size = int(test_ratio*total_seqs)
 
@@ -107,13 +108,23 @@ class SecondLayerModel:
         self.activation_type = activation_type
         self.solver_type = solver_type
 
-        if (self.model_type == "mlp"):
+        self.result_path = os.path.join("results", SAVE_LOCATION_NAME, f"{LAYER_2_MODEL_TYPE}_{LAYER2_EPOCH_NUM}_result.txt")
+        self.model_save_path = os.path.join("tf_sessions", SAVE_LOCATION_NAME, f"{LAYER_2_MODEL_TYPE}_{LAYER2_EPOCH_NUM}_model_checkpoint.pkl")
+        
+        if (os.path.exists(self.model_save_path)):
+            with open(self.model_save_path, 'rb') as f:
+                self.model = pickle.load(f)
+        elif (self.model_type == "mlp"):
             self.model = MLPClassifier(hidden_layer_sizes=(12,6,12), activation=self.activation_type, solver=self.solver_type, max_iter=max_iter)
-
+      
     def fit(self, dataset):
         train_x = dataset.train_video_x
         train_y = dataset.train_video_y
         self.model.fit(train_x, train_y)
+
+        # save model
+        with open(self.model_save_path,'wb') as f:
+            pickle.dump(self.model,f)
 
     def evaluate(self, data):
         predict_result = self.model.predict(data)
@@ -124,8 +135,7 @@ class SecondLayerModel:
         predict_test = self.model.predict(dataset.test_video_x)
         accuracy = 1 - (np.mean( predict_test != dataset.test_video_y ))
 
-        result_path = os.path.join("results", SAVE_LOCATION_NAME, f"{LAYER_2_MODEL_TYPE}_{LAYER2_EPOCH_NUM}_result.txt")
-        with open(result_path,"w") as f:
+        with open(self.result_path,"w") as f:
             f.write(f"accuracy: {accuracy}")
             f.write("\n")
             f.write(str(confusion_matrix(dataset.test_video_y, predict_test)))

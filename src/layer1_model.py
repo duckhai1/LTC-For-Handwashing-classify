@@ -161,7 +161,7 @@ class TrainingModel:
             self.constrain_op.extend(self._get_sparsity_ops())
 
         self.y = tf.layers.Dense(6,activation=None)(head)
-        print("logit y shape: ",str(self.y.shape))
+        # print("logit y shape: ",str(self.y.shape))
         self.loss = tf.reduce_mean(tf.losses.sparse_softmax_cross_entropy(
             labels = self.target_y,
             logits = self.y,
@@ -383,13 +383,19 @@ class TrainingForest:
             print("\t", forest_percentage)
             
             for step in forest_percentage.keys():
+                # sum score
+                highest_threshold[step][1] += forest_percentage[step][1]
+                # max occurrence 
                 if (highest_threshold[step][0] < forest_percentage[step][0]):
                     highest_threshold[step][0] = forest_percentage[step][0]
-                    highest_threshold[step][1] = forest_percentage[step][1]
 
             start+=1
             end+=1
         
+        # average occurrence
+        for step in highest_threshold.keys():
+            highest_threshold[step][1] = highest_threshold[step][1] / start
+
         return (forest_final_predict, list(highest_threshold.values()))
 
     def fit(self, dataset):
