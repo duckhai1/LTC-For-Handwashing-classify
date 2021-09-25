@@ -1,7 +1,6 @@
 from numpy.core.defchararray import array
 from layer1_model import *
 from layer2_model import *
-from generating_raw_data import *
 import argparse
 
 
@@ -36,7 +35,6 @@ if __name__ == '__main__':
     parser.add_argument('--eval', help="Set eval mode",default="false")
     parser.add_argument('-p', '--path',  help="Set video path for evaluation")
 
-    # try:
     args = parser.parse_args()
     if args.eval == "true":
         layer1_model = setup_layer1_model(MODEL_EPOCH_NUM)
@@ -64,6 +62,3 @@ if __name__ == '__main__':
     else:
         print("Wrong usage.")
         parser.print_help()
-    # except Exception as e:
-    #     parser.print_help()
-    #     print(e)
