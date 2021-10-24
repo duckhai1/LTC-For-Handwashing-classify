@@ -29,7 +29,7 @@ WINDOWS_LENGTH = int(PROCESS_VIDEO_LENGTH / FRAME_STEP)             # length of 
 VALID_RATIO = 0.2                                                   # Valid percentage when dividing dataset
 TEST_RATIO = 0.1                                                    # Test percentage when dividing dataset
 BATCH_SIZE = 64                                                     # Batch size fitting in network
-NUMBER_OF_TREE = 3                                                  # Number of tree in random forest (default: 3)
+NUMBER_OF_TREE = 1                                                  # Number of tree in random forest (default: 3)
 
 ## Set DIFFERENT_TREE_LIST if tree in forest is different type of network or MODEL_TYPE if all tree have same type ##
 DIFFERENT_TREE_LIST = None                                          # Example for using 2 kind of network: ["ltc", "lstm"] 
@@ -45,9 +45,9 @@ MODEL_SPARSITY = 0.0
 ######
 LAYER_2_MODEL_TYPE = "mlp"                                          # Type of layer 2 model
 LAYER_2_VALID_RATIO = 0.2                                           # Valid percentage when dividing dataset
-LAYER_2_TEST_RATIO = 0.1                                            # Test percentage when dividing dataset
+LAYER_2_TEST_RATIO = 0.2                                           # Test percentage when dividing dataset
 
-LAYER2_EPOCH_NUM = 200                                              # Number of epoch when training layer2 
+LAYER2_EPOCH_NUM = 500                                              # Number of epoch when training layer2 
 LAYER2_ACTIVATION = 'relu'                                          # Activation function type for MLP ((identity, logistic, tanh, relu)
 LAYER2_SOLVER = 'adam'                                              # Optimizer type for MLP (lbfgs, sgd, adam)
 ######

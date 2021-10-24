@@ -6,6 +6,7 @@ import pandas as pd
 import tensorflow as tf
 from sklearn.neural_network import MLPClassifier
 from sklearn import preprocessing
+from sklearn import metrics
 from sklearn.metrics import classification_report,confusion_matrix, plot_roc_curve, plot_precision_recall_curve
 import sys
 import pickle
@@ -133,7 +134,7 @@ class SecondLayerModel:
 
     def predict(self, dataset):
         predict_test = self.model.predict(dataset.test_video_x)
-        accuracy = 1 - (np.mean( predict_test != dataset.test_video_y ))
+        accuracy = metrics.accuracy_score(dataset.test_video_y, predict_test)        
 
         with open(self.result_path,"w") as f:
             f.write(f"accuracy: {accuracy}")
@@ -142,7 +143,34 @@ class SecondLayerModel:
             f.write("\n")
             f.write(str(classification_report(dataset.test_video_y, predict_test)))
 
+        self.draw_roc_graph(dataset)
         print(">>> Accuracy: ", accuracy)
+
+    def draw_roc_graph(self, dataset):
+        y_pred_proba = self.model.predict_proba(dataset.test_video_x)[::,1]
+        fpr, tpr, threshold = metrics.roc_curve(dataset.test_video_y, y_pred_proba)
+        roc_auc = metrics.auc(fpr, tpr)
+        plt.plot(fpr, tpr, 'b', label = 'AUC = %0.2f' % roc_auc)
+        plt.plot([0, 1], [0, 1],'r--')
+        
+        plt.legend(loc = 'lower right')
+        plt.ylabel('True Positive Rate')
+        plt.xlabel('False Positive Rate')
+        plt.show()
+
+    def draw_pr_graph(self, dataset):
+        predict_test = self.model.predict(dataset.test_video_x)
+
+        y_pred_proba_rc = self.model.predict_proba(dataset.test_video_x)[::,1]
+        prec, recall, threshold = metrics.precision_recall_curve(dataset.test_video_y , y_pred_proba_rc)
+        ap_auc = metrics.average_precision_score(dataset.test_video_y , y_pred_proba_rc)
+        plt.step(recall, prec, 'b', label = 'AP = %0.2f' % ap_auc)
+        plt.plot([0, 1], [1, 0],'r--')
+        plt.legend(loc = 'lower left')
+        plt.ylabel('Precision')
+        plt.xlabel('Recall')
+        plt.show()
+
 
 def setup_layer2_model(max_iter):
     return SecondLayerModel(LAYER_2_MODEL_TYPE, max_iter, LAYER2_ACTIVATION, LAYER2_SOLVER)
