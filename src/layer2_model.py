@@ -100,8 +100,6 @@ class VideoSet:
         self.train_video_x = self.all_video_x[permutation[valid_size+test_size:]]
         self.train_video_y = self.all_video_y[permutation[valid_size+test_size:]]
 
-
-
 class SecondLayerModel:
     def __init__(self, model_type, max_iter, activation_type, solver_type):
         self.model_type = model_type

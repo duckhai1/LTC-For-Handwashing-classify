@@ -4,11 +4,9 @@ simplefilter(action='ignore', category=FutureWarning)
 import os
 import glob
 import pickle
-
 import numpy as np
 import pandas as pd
 import tensorflow as tf
-
 import ltc_model as ltc
 from ctrnn_model import CTRNN, NODE, CTGRU
 
