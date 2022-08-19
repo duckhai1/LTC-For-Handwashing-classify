@@ -27,6 +27,8 @@ LTC reference: https://github.com/raminmh/liquid_time_constant_networks/tree/mas
         
 - You can specify to enable train/test mode by --train / --test flag. Default both of them is true
 
+- You can also specify the custom path containing collection of train dataset or test dataset only through --trainData / --testData input 
+
 - The property list is in **/src/property.py**. 
 
 ### Evaluate whole project with single data  
