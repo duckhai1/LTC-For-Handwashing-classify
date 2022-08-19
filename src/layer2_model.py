@@ -1,9 +1,11 @@
-from warnings import simplefilter 
+from warnings import simplefilter
+from bs4 import SoupStrainer 
 simplefilter(action='ignore', category=FutureWarning)
 
 import numpy as np
 import pandas as pd 
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
+tf.disable_v2_behavior()
 from sklearn.neural_network import MLPClassifier
 from sklearn import preprocessing
 from sklearn.metrics import classification_report,confusion_matrix, plot_roc_curve, plot_precision_recall_curve
@@ -16,13 +18,21 @@ from property import *
 from layer1_model import *
 
 class VideoSet:
-    def __init__(self, is_regenerate):
+    def __init__(self, is_regenerate, trainData, testData):
         self.training_forest = setup_layer1_model(MODEL_EPOCH_NUM)
         
         self.clean_raw_data(is_regenerate)
 
-        self.all_video_x, self.all_video_y = self.load_data_from_file()
+        self.all_video_x, self.all_video_y = self.load_data_from_file(self.process_data_path)
         self._divide_dataset(LAYER_2_VALID_RATIO, LAYER_2_TEST_RATIO)
+
+        if trainData is not None:
+            assert os.path.exists(trainData), "Can not find the path, "+str(trainData)
+            self.train_video_x, self.train_video_y = self.load_data_from_file(trainData)
+
+        if testData is not None:
+            assert os.path.exists(testData), "Can not find the path, "+str(testData)
+            self.test_video_x, self.test_video_y = self.load_data_from_file(testData)
 
     def clean_raw_data(self, is_regenerate):
         print("Preparing layer2 clean data...")
@@ -41,10 +51,10 @@ class VideoSet:
         self.generate_data()
         print("Done processing layer2 data")
 
-    def load_data_from_file(self):
+    def load_data_from_file(self, process_data_path):
         all_x = []
         all_y = []
-        for dirname, _, filenames in os.walk(self.process_data_path):
+        for dirname, _, filenames in os.walk(process_data_path):
             for filename in filenames:
                 if filename.endswith(DATA_EXTENSION):
                     data_path = os.path.join(dirname, filename)
@@ -99,6 +109,8 @@ class VideoSet:
         self.test_video_y = self.all_video_y[permutation[valid_size:valid_size+test_size]]
         self.train_video_x = self.all_video_x[permutation[valid_size+test_size:]]
         self.train_video_y = self.all_video_y[permutation[valid_size+test_size:]]
+        print("========================VIDEO TRAIN ===========================")
+
 
 class SecondLayerModel:
     def __init__(self, model_type, max_iter, activation_type, solver_type):
@@ -145,6 +157,6 @@ class SecondLayerModel:
 def setup_layer2_model(max_iter):
     return SecondLayerModel(LAYER_2_MODEL_TYPE, max_iter, LAYER2_ACTIVATION, LAYER2_SOLVER)
 
-def setup_layer2_database():
-    return VideoSet(REGENERATE_LAYER2_DATA)
+def setup_layer2_database(trainData, testData):
+    return VideoSet(REGENERATE_LAYER2_DATA, trainData, testData)
 

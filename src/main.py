@@ -33,6 +33,8 @@ if __name__ == '__main__':
     parser.add_argument('--train', help="Set train mode", default="true")
     parser.add_argument('--test', help="Set test mode", default="true")
     parser.add_argument('--eval', help="Set eval mode",default="false")
+    parser.add_argument('--trainData', help="Set path to train data")
+    parser.add_argument('--testData', help="Set eval test data")
     parser.add_argument('-p', '--path',  help="Set video path for evaluation")
 
     args = parser.parse_args()
@@ -52,7 +54,7 @@ if __name__ == '__main__':
             test_model(layer1_model, layer1_database)
 
     elif args.layer == "layer2":
-        layer2_database = setup_layer2_database()
+        layer2_database = setup_layer2_database(args.trainData, args.testData)
         layer2_model = setup_layer2_model(LAYER2_EPOCH_NUM)
 
         if args.train == "true":
