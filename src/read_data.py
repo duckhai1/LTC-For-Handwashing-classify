@@ -59,7 +59,7 @@ def extract_layer1_train_video():
                     print("\tpreprocessing: " +video_path)
                     for rotate_direction in rotation_map.keys():
                         ## already preprocess yet:  
-                        feature_path = os.path.join(LAYER_1_TRAIN_DATA_PATH, label, os.path.splitext(filename)[0]+"_sv_0_"+rotate_direction+".npy")
+                        feature_path = os.path.join(LAYER_1_TRAIN_DATA_PATH, label, os.path.splitext(filename)[0]+"_sv_0_"+rotate_direction+ "_0"+ ".npy")
                         if os.path.isfile(feature_path):
                             continue
 
@@ -69,29 +69,41 @@ def extract_layer1_train_video():
                         no_sub_video = no_frames // PROCESS_VIDEO_LENGTH
                         # process each sub video
                         for sub_video_counter in range(no_sub_video):
-                            frame_list = []
-                            path = os.path.join(LAYER_1_TRAIN_DATA_PATH, label, os.path.splitext(filename)[0]+"_sv_"+str(sub_video_counter)+"_"+rotate_direction+".npy")
-                            print("\t\tconvert into: " + path)
+                            frame_dic = {}
+                            for i in range(FRAME_STEP):
+                                frame_dic[i] = []
+
                             # process each image
+                            is_break = False
                             for img_counter in range(PROCESS_VIDEO_LENGTH):
-                                # read each frame
-                                is_continue, feature_vector = _get_next_frame(cap, counter=img_counter, rotation_direction=rotation_map[rotate_direction])
+                                for i in range(FRAME_STEP):
+                                    if img_counter % FRAME_STEP != i:
+                                        continue
 
-                                if is_continue == None:
-                                    pass
-                                elif is_continue:
-                                    continue
-                                else:
+                                    # read each frame
+                                    is_continue, feature_vector = _get_next_frame(cap, counter=img_counter, rotation_direction=rotation_map[rotate_direction])
+
+                                    if is_continue == True:
+                                        pass
+                                    elif is_continue == False:
+                                        is_break = True
+                                        break
+                                    # adding label (y) in data
+                                    frame_feature = np.append(feature_vector, [label_map[label]] )
+                                    frame_dic[i].append(frame_feature)
+                                if is_break:
                                     break
-                                # adding label (y) in data
-                                frame_feature = np.append(feature_vector, [label_map[label]] )
-                                frame_list.append(frame_feature)
 
-                            if (len(frame_list) == 0):
+                            if is_break:
                                 print("This video part is corrupted, can not preprocess")
                                 break
                             else:
-                                np.save(path, frame_list)
+                                for i in range(FRAME_STEP):
+                                    path = os.path.join(LAYER_1_TRAIN_DATA_PATH, label, os.path.splitext(filename)[0]+"_sv_"+str(sub_video_counter)+"_"+rotate_direction+"_"+str(i)+".npy")
+                                    print("\t\tconvert into: " + path)
+                                    np.save(path, frame_dic[i])
+
+
 
 def extract_layer2_train_video():
     # read each video
@@ -168,10 +180,6 @@ def extract_single_vid(video_path):
 
 
 def _get_next_frame(cap, counter, rotation_direction=None):
-    # only get frame of each FRAME_STEP frames
-    if counter % FRAME_STEP != 0:
-        return (True, None)
-    
     # read each frame
     ret, frame = cap.read()  
 
@@ -194,7 +202,7 @@ def _get_next_frame(cap, counter, rotation_direction=None):
         block_norm='L2-Hys',
         feature_vector=True)
 
-    return (None, feature_vector)
+    return (True, feature_vector)
 
 def prepare_traindata_destination(rawdata_path, data_path):
     if (not os.path.exists(rawdata_path)):
