@@ -21,23 +21,26 @@ class DataSet:
     def __init__(self, is_regenerate, trainData, testData):
         self.clean_raw_data(is_regenerate)
 
-        all_x, all_y = self.load_data_from_file(LAYER_1_TRAIN_DATA_PATH)
+        all_x, all_y, label, path = self.load_data_from_file(LAYER_1_TRAIN_DATA_PATH)
 
         # all_x shape: (time step for each layer, number of batch, number of feature)
         self.all_x = np.stack(all_x, axis=1)
         self.all_y = np.stack(all_y, axis=1)
+        self.path = np.stack(path, axis=1)
+        self.label = np.stack(label, axis=1)
+
         
         self._divide_dataset(VALID_RATIO, TEST_RATIO)
 
         if trainData is not None:
             assert os.path.exists(trainData), "Can not find the path, "+str(trainData)
-            self.train_x, self.train_y = self.load_data_from_file(trainData)
+            self.train_x, self.train_y, _, _ = self.load_data_from_file(trainData)
             self.train_x = np.stack(self.train_x, axis=1)
             self.train_y = np.stack(self.train_y, axis=1)
 
         if testData is not None:
             assert os.path.exists(testData), "Can not find the path, "+str(testData)
-            self.test_x, self.test_y = self.load_data_from_file(testData)
+            self.test_x, self.test_y, _, _ = self.load_data_from_file(testData)
             self.test_x = np.stack(self.test_x, axis=1)
             self.test_y = np.stack(self.test_y, axis=1)
 
@@ -62,7 +65,9 @@ class DataSet:
     def load_data_from_file(self, process_data_path):
         all_x = []
         all_y = []
-        
+        path = []
+        label = []
+
         # read each label in dataset
         print("Reading data layer1 ...", end="")
         for _, label_list, _ in os.walk(process_data_path):
@@ -73,11 +78,13 @@ class DataSet:
                         if filename.endswith(DATA_EXTENSION):
                             data_path = os.path.join(dirname, filename)
                             feature = np.load(data_path)
+                            path.append(data_path)
+                            label.append(filename)
                             all_x.append(feature[:,:-1])
                             all_y.append(feature[:,-1])
 
         print("Done")                    
-        return np.array(all_x), np.array(all_y)
+        return np.array(all_x), np.array(all_y), np.array(label), np.array(path)
 
     def iterate_train(self,train_set_number, batch_size):
         train_x = self.train_x_set[train_set_number]
@@ -103,8 +110,26 @@ class DataSet:
         self.valid_y = self.all_y[:,permutation[:valid_size]]
         self.test_x = self.all_x[:,permutation[valid_size:valid_size+test_size]]
         self.test_y = self.all_y[:,permutation[valid_size:valid_size+test_size]]
+        self.test_label = self.label[:,permutation[valid_size:valid_size+test_size]]
+        self.test_path = self.path[:,permutation[valid_size:valid_size+test_size]]
         self.train_x = self.all_x[:,permutation[valid_size+test_size:]]
         self.train_y = self.all_y[:,permutation[valid_size+test_size:]]
+        self.train_label = self.label[:,permutation[valid_size+test_size:]]
+        self.train_path = self.path[:,permutation[valid_size+test_size:]]
+
+        import shutil
+
+        for dirname, _, filenames in os.walk(os.path.join("..", "data", "prepare", "temp", "train")):
+            for filename in filenames:
+                os.remove(os.path.join(dirname, filename))
+        for dirname, _, filenames in os.walk(os.path.join("..", "data", "prepare", "temp", "test")):
+            for filename in filenames:
+                os.remove(os.path.join(dirname, filename))     
+
+        for filename, path in zip(self.train_label, self.train_path):
+            shutil.copy(path, os.path.join("..", "data", "prepare", "temp", "train", filename))
+        for filename, path in zip(self.test_label, self.test_path):
+            shutil.copy(path, os.path.join("..", "data", "prepare", "temp", "test", filename))
 
     def _divide_train_data(self, number_of_set):
         self.train_x_set = []

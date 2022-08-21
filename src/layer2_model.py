@@ -121,18 +121,18 @@ class VideoSet:
         print(self.test_label)
         import shutil
 
-        for dirname, _, filenames in os.walk(os.path.join("..", "data", "test", "temp", "train")):
+        for dirname, _, filenames in os.walk(os.path.join("..", "data", "prepare", "temp", "train")):
             for filename in filenames:
                 os.remove(os.path.join(dirname, filename))
-        for dirname, _, filenames in os.walk(os.path.join("..", "data", "test", "temp", "test")):
+        for dirname, _, filenames in os.walk(os.path.join("..", "data", "prepare", "temp", "test")):
             for filename in filenames:
                 os.remove(os.path.join(dirname, filename))     
 
         src = os.path.join("..", "data", "layer_2_train", "processed_data", "ltc_3")
         for filename in self.train_label:
-            shutil.copy(os.path.join(src, filename), os.path.join("..", "data", "test", "temp", "train", filename))
+            shutil.copy(os.path.join(src, filename), os.path.join("..", "data", "prepare", "temp", "train", filename))
         for filename in self.test_label:
-            shutil.copy(os.path.join(src, filename), os.path.join("..", "data", "test", "temp", "test", filename))
+            shutil.copy(os.path.join(src, filename), os.path.join("..", "data", "prepare", "temp", "test", filename))
 
         print("========================VIDEO TRAIN ===========================")
 
