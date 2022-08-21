@@ -45,7 +45,7 @@ if __name__ == '__main__':
         eval_layer2(layer1_model, layer2_model, args.path)
 
     elif args.layer == "layer1":
-        layer1_database = setup_layer1_database()
+        layer1_database = setup_layer1_database(args.trainData, args.testData)
         layer1_model = setup_layer1_model(MODEL_EPOCH_NUM)
 
         if args.train == "true":
