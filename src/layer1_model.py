@@ -26,8 +26,8 @@ class DataSet:
         # all_x shape: (time step for each layer, number of batch, number of feature)
         self.all_x = np.stack(all_x, axis=1)
         self.all_y = np.stack(all_y, axis=1)
-        self.path = np.stack(path, axis=1)
-        self.label = np.stack(label, axis=1)
+        self.path = path
+        self.label = label
 
         
         self._divide_dataset(VALID_RATIO, TEST_RATIO)
@@ -66,7 +66,7 @@ class DataSet:
         all_x = []
         all_y = []
         path = []
-        label = []
+        data_label = []
 
         # read each label in dataset
         print("Reading data layer1 ...", end="")
@@ -79,12 +79,12 @@ class DataSet:
                             data_path = os.path.join(dirname, filename)
                             feature = np.load(data_path)
                             path.append(data_path)
-                            label.append(filename)
+                            data_label.append(filename)
                             all_x.append(feature[:,:-1])
                             all_y.append(feature[:,-1])
 
         print("Done")                    
-        return np.array(all_x), np.array(all_y), np.array(label), np.array(path)
+        return np.array(all_x), np.array(all_y), np.array(data_label), np.array(path)
 
     def iterate_train(self,train_set_number, batch_size):
         train_x = self.train_x_set[train_set_number]
@@ -105,17 +105,18 @@ class DataSet:
         permutation = np.random.RandomState(27731).permutation(total_seqs)
         valid_size = int(valid_ratio*total_seqs)
         test_size = int(test_ratio*total_seqs)
+        
 
         self.valid_x = self.all_x[:,permutation[:valid_size]]
         self.valid_y = self.all_y[:,permutation[:valid_size]]
         self.test_x = self.all_x[:,permutation[valid_size:valid_size+test_size]]
         self.test_y = self.all_y[:,permutation[valid_size:valid_size+test_size]]
-        self.test_label = self.label[:,permutation[valid_size:valid_size+test_size]]
-        self.test_path = self.path[:,permutation[valid_size:valid_size+test_size]]
+        self.test_label = self.label[permutation[valid_size:valid_size+test_size]]
+        self.test_path = self.path[permutation[valid_size:valid_size+test_size]]
         self.train_x = self.all_x[:,permutation[valid_size+test_size:]]
         self.train_y = self.all_y[:,permutation[valid_size+test_size:]]
-        self.train_label = self.label[:,permutation[valid_size+test_size:]]
-        self.train_path = self.path[:,permutation[valid_size+test_size:]]
+        self.train_label = self.label[permutation[valid_size+test_size:]]
+        self.train_path = self.path[permutation[valid_size+test_size:]]
 
         import shutil
 
