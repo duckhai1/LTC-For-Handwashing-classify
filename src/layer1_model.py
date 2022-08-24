@@ -19,6 +19,10 @@ tf.logging.set_verbosity(tf.logging.ERROR)
 
 class DataSet:
     def __init__(self, is_regenerate, trainData, testData):
+    
+        self.trainfile=LAYER_1_TRAIN_FILE
+        self.testfile=LAYER_1_TEST_FILE
+        
         self.clean_raw_data(is_regenerate)
 
         all_x, all_y = self.load_data_from_file(LAYER_1_TRAIN_DATA_PATH)

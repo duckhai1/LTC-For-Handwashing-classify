@@ -2,6 +2,15 @@ import os
 
 ### PROPERTY ###
 ######
+LAYER_1_RAWDATA_PATH = os.path.join("data", "layer_1_data", "raw_video")
+LAYER_2_RAWDATA_PATH = os.path.join("data", "layer_2_data", "raw_video")
+
+LAYER_1_TRAIN_PATH = os.path.join("data", "layer_1_data", "feature_data","train")
+LAYER_1_TEST_PATH = os.path.join("data", "layer_1_data", "feature_data","test")
+
+LAYER_2_TRAIN_PATH = os.path.join("data", "layer_2_data", "feature_data","train")
+LAYER_2_TEST_PATH = os.path.join("data", "layer_2_data", "feature_data","test")
+
 LAYER_1_TRAIN_RAWDATA_PATH = os.path.join("..", "data", "layer_1_train", "raw_video")
 LAYER_1_TRAIN_DATA_PATH = os.path.join("..", "data", "layer_1_train", "clean_data")
 LAYER_2_TRAIN_RAWDATA_PATH = os.path.join("..", "data", "layer_2_train", "raw_video")
@@ -15,6 +24,12 @@ DATA_EXTENSION = ('.npy')
 
 REGENERATE_LAYER1_DATA = False                                      # Re-compute dataset flag
 REGENERATE_LAYER2_DATA = False                                      # Re-compute dataset flag
+
+LAYER_1_TRAIN_FILE=os.path.join("data","layer_1_data","case1_train.lst")
+LAYER_1_TEST_FILE=os.path.join("data","layer_1_data","case1_test.lst")
+LAYER_2_TRAIN_FILE=os.path.join("data","layer_2_data","case1_train.lst")
+LAYER_2_TEST_FILE=os.path.join("data","layer_2_data","case1_test.lst")
+
 ######
 
 ### Preprocessing hyperparameter ###
