@@ -23,17 +23,16 @@ class VideoSet:
         
         self.clean_raw_data(is_regenerate)
 
-        self.all_video_x, self.all_video_y, self.labels = self.load_data_from_file(self.process_data_path)
+        self.all_video_x, self.all_video_y = self.load_data_from_file(self.process_data_path)
         self._divide_dataset(LAYER_2_VALID_RATIO, LAYER_2_TEST_RATIO)
 
         if trainData is not None:
             assert os.path.exists(trainData), "Can not find the path, "+str(trainData)
-            self.train_video_x, self.train_video_y, _ = self.load_data_from_file(trainData)
+            self.train_video_x, self.train_video_y = self.load_data_from_file(trainData)
 
         if testData is not None:
             assert os.path.exists(testData), "Can not find the path, "+str(testData)
-            print("overwrite")
-            self.test_video_x, self.test_video_y, _ = self.load_data_from_file(testData)
+            self.test_video_x, self.test_video_y = self.load_data_from_file(testData)
 
     def clean_raw_data(self, is_regenerate):
         print("Preparing layer2 clean data...")
@@ -55,14 +54,12 @@ class VideoSet:
     def load_data_from_file(self, process_data_path):
         all_x = []
         all_y = []
-        label = []
         for dirname, _, filenames in os.walk(process_data_path):
             for filename in filenames:
                 if filename.endswith(DATA_EXTENSION):
                     data_path = os.path.join(dirname, filename)
                     video_data = np.load(data_path)
 
-                    label.append(filename)
                     all_x.append(video_data[:-1])            
                     all_y.append(video_data[-1])
         
@@ -71,7 +68,7 @@ class VideoSet:
         score_arr =  all_x[:,6:]
         normalized_score = preprocessing.normalize(score_arr)
         all_x[:,6:] = normalized_score
-        return np.array(all_x), np.array(all_y), np.array(label)
+        return np.array(all_x), np.array(all_y)
 
     def generate_data(self):
         for _, video_label_list, _ in os.walk(LAYER_2_TRAIN_DATA_PATH):
@@ -112,28 +109,6 @@ class VideoSet:
         self.test_video_y = self.all_video_y[permutation[valid_size:valid_size+test_size]]
         self.train_video_x = self.all_video_x[permutation[valid_size+test_size:]]
         self.train_video_y = self.all_video_y[permutation[valid_size+test_size:]]
-        self.train_label = self.labels[permutation[valid_size+test_size:]]
-        self.test_label = self.labels[permutation[valid_size:valid_size+test_size]]
-
-        print ("train data: ")
-        print(self.train_label)
-        print("test data: ")
-        print(self.test_label)
-        import shutil
-
-        for dirname, _, filenames in os.walk(os.path.join("..", "data", "prepare", "temp", "train")):
-            for filename in filenames:
-                os.remove(os.path.join(dirname, filename))
-        for dirname, _, filenames in os.walk(os.path.join("..", "data", "prepare", "temp", "test")):
-            for filename in filenames:
-                os.remove(os.path.join(dirname, filename))     
-
-        src = os.path.join("..", "data", "layer_2_train", "processed_data", "ltc_3")
-        for filename in self.train_label:
-            shutil.copy(os.path.join(src, filename), os.path.join("..", "data", "prepare", "temp", "train", filename))
-        for filename in self.test_label:
-            shutil.copy(os.path.join(src, filename), os.path.join("..", "data", "prepare", "temp", "test", filename))
-
         print("========================VIDEO TRAIN ===========================")
 
 

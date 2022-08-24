@@ -2,6 +2,15 @@ import os
 
 ### PROPERTY ###
 ######
+LAYER_1_RAWDATA_PATH = os.path.join("data", "layer_1_data", "raw_video")
+LAYER_2_RAWDATA_PATH = os.path.join("data", "layer_2_data", "raw_video")
+
+LAYER_1_TRAIN_PATH = os.path.join("data", "layer_1_data", "feature_data","train")
+LAYER_1_TEST_PATH = os.path.join("data", "layer_1_data", "feature_data","test")
+
+LAYER_2_TRAIN_PATH = os.path.join("data", "layer_2_data", "feature_data","train")
+LAYER_2_TEST_PATH = os.path.join("data", "layer_2_data", "feature_data","test")
+
 LAYER_1_TRAIN_RAWDATA_PATH = os.path.join("..", "data", "layer_1_train", "raw_video")
 LAYER_1_TRAIN_DATA_PATH = os.path.join("..", "data", "layer_1_train", "clean_data")
 LAYER_2_TRAIN_RAWDATA_PATH = os.path.join("..", "data", "layer_2_train", "raw_video")
@@ -15,6 +24,12 @@ DATA_EXTENSION = ('.npy')
 
 REGENERATE_LAYER1_DATA = False                                      # Re-compute dataset flag
 REGENERATE_LAYER2_DATA = False                                      # Re-compute dataset flag
+
+LAYER_1_TRAIN_FILE=os.path.join("data","layer_1_data","case1_train.lst")
+LAYER_1_TEST_FILE=os.path.join("data","layer_1_data","case1_test.lst")
+LAYER_2_TRAIN_FILE=os.path.join("data","layer_2_data","case1_train.lst")
+LAYER_2_TEST_FILE=os.path.join("data","layer_2_data","case1_test.lst")
+
 ######
 
 ### Preprocessing hyperparameter ###
@@ -26,7 +41,7 @@ WINDOWS_LENGTH = int(PROCESS_VIDEO_LENGTH / FRAME_STEP)             # length of 
 
 ### Layer 1 Model hyperparameter ###
 ######
-VALID_RATIO = 0.2                                                   # Valid percentage when dividing dataset
+VALID_RATIO = 0.1                                                   # Valid percentage when dividing dataset
 TEST_RATIO = 0.1                                                    # Test percentage when dividing dataset
 BATCH_SIZE = 64                                                     # Batch size fitting in network
 NUMBER_OF_TREE = 3                                                  # Number of tree in random forest (default: 3)
@@ -36,7 +51,7 @@ DIFFERENT_TREE_LIST = None                                          # Example fo
 MODEL_TYPE = "ltc"                                                  # type of Cell for network (lstm / ltc / ltc_ex / ltc_rk / node / ctgru / ctrnn)
 
 MODEL_SIZE = 10                                                     # time step
-MODEL_EPOCH_NUM = 100                                               # iterative
+MODEL_EPOCH_NUM = 300                                               # iterative
 MODEL_LOG_PERIOD = 1                                                # number of iterative for each save
 MODEL_SPARSITY = 0.0
 ######

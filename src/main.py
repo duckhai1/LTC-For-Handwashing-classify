@@ -29,13 +29,13 @@ def eval_layer2(layer1_model, layer2_model, vid_path):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('-l','--layer', help="Choose which layer to run on: layer1/layer2", default="setup", required=True)
+    parser.add_argument('-l','--layer', help="Choose which layer to run on: layer1/layer2", default="layer1", required=False) #Hieu
     parser.add_argument('--train', help="Set train mode", default="true")
     parser.add_argument('--test', help="Set test mode", default="true")
     parser.add_argument('--eval', help="Set eval mode",default="false")
-    parser.add_argument('--trainData', help="Set path to train data")
-    parser.add_argument('--testData', help="Set eval test data")
-    parser.add_argument('-p', '--path',  help="Set video path for evaluation")
+    parser.add_argument('--trainData', help="Set path to train data", default="None") #Hieu
+    parser.add_argument('--testData', help="Set eval test data", default="None")
+    #parser.add_argument('-p', '--path',  help="Set video path for evaluation")
 
     args = parser.parse_args()
     if args.eval == "true":
