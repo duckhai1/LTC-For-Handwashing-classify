@@ -6,9 +6,11 @@ LAYER_1_RAWDATA_PATH = os.path.join("data", "layer_1_data", "raw_video")
 LAYER_2_RAWDATA_PATH = os.path.join("data", "layer_2_data", "raw_video")
 
 LAYER_1_TRAIN_PATH = os.path.join("data", "layer_1_data", "feature_data","train")
+LAYER_1_VALID_PATH = os.path.join("data", "layer_1_data", "feature_data","valid")
 LAYER_1_TEST_PATH = os.path.join("data", "layer_1_data", "feature_data","test")
 
 LAYER_2_TRAIN_PATH = os.path.join("data", "layer_2_data", "feature_data","train")
+LAYER_2_VALID_PATH = os.path.join("data", "layer_2_data", "feature_data","valid")
 LAYER_2_TEST_PATH = os.path.join("data", "layer_2_data", "feature_data","test")
 
 LAYER_1_TRAIN_RAWDATA_PATH = os.path.join("..", "data", "layer_1_train", "raw_video")

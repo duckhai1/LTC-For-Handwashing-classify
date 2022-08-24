@@ -61,7 +61,7 @@ def preprocess_layer1_video():
 def preprocess_layer2_video():
     prepare_data_path(rawdata_path=LAYER_2_RAWDATA_PATH,
                       data_path=LAYER_2_TRAIN_PATH)
-   prepare_data_path(rawdata_path=LAYER_2_RAWDATA_PATH,
+    prepare_data_path(rawdata_path=LAYER_2_RAWDATA_PATH,
                       data_path=LAYER_2_TRAIN_PATH)
 
     layer2_video_to_feature(input_file=LAYER_2_TRAIN_FILE,

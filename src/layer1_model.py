@@ -18,32 +18,28 @@ from read_data import *
 tf.logging.set_verbosity(tf.logging.ERROR)
 
 class DataSet:
-    def __init__(self, is_regenerate, trainData, testData):
+    def __init__(self, is_regenerate, useCustomDataList):
     
         self.trainfile=LAYER_1_TRAIN_FILE
         self.testfile=LAYER_1_TEST_FILE
         
         self.clean_raw_data(is_regenerate)
 
-        all_x, all_y = self.load_data_from_file(LAYER_1_TRAIN_DATA_PATH)
-
-        # all_x shape: (time step for each layer, number of batch, number of feature)
-        self.all_x = np.stack(all_x, axis=1)
-        self.all_y = np.stack(all_y, axis=1)
+        if (useCustomDataList):
+            preprocess_layer1_video()
+            self.train_x, self.train_y = self.load_data_from_file(LAYER_1_TRAIN_PATH)
+            self.valid_x, self.valid_y = self.load_data_from_file(LAYER_1_VALID_PATH)
+            self.test_x, self.test_y = self.load_data_from_file(LAYER_1_TEST_PATH)
         
-        self._divide_dataset(VALID_RATIO, TEST_RATIO)
+        else:
+            all_x, all_y = self.load_data_from_file(LAYER_1_TRAIN_DATA_PATH)
 
-        if trainData is not None:
-            assert os.path.exists(trainData), "Can not find the path, "+str(trainData)
-            self.train_x, self.train_y = self.load_data_from_file(trainData)
-            self.train_x = np.stack(self.train_x, axis=1)
-            self.train_y = np.stack(self.train_y, axis=1)
+            # all_x shape: (time step for each layer, number of batch, number of feature)
+            self.all_x = np.stack(all_x, axis=1)
+            self.all_y = np.stack(all_y, axis=1)
+            
+            self._divide_dataset(VALID_RATIO, TEST_RATIO)
 
-        if testData is not None:
-            assert os.path.exists(testData), "Can not find the path, "+str(testData)
-            self.test_x, self.test_y = self.load_data_from_file(testData)
-            self.test_x = np.stack(self.test_x, axis=1)
-            self.test_y = np.stack(self.test_y, axis=1)
 
         self._divide_train_data(NUMBER_OF_TREE)
         print("all train_x.shape", self.train_x.shape)
@@ -497,6 +493,6 @@ class TrainingForest:
 def setup_layer1_model(max_iter):
     return TrainingForest(NUMBER_OF_TREE, TREE_TYPE_LIST, MODEL_SIZE, MODEL_SPARSITY, max_iter, MODEL_LOG_PERIOD)
 
-def setup_layer1_database(trainData, testData):
-    return DataSet(REGENERATE_LAYER1_DATA, trainData, testData)
+def setup_layer1_database(useCustomDataList):
+    return DataSet(REGENERATE_LAYER1_DATA, useCustomDataList)
 

@@ -27,7 +27,7 @@ LTC reference: https://github.com/raminmh/liquid_time_constant_networks/tree/mas
         
 - You can specify to enable train/test mode by --train / --test flag. Default both of them is true
 
-- You can also specify the custom path containing collection of train dataset or test dataset only through --trainData / --testData input 
+- You can also enable feature to specify the custom collection of dataset through useCustomDataList flag. The list of train/valid/test data should be store in file which its path is declare in (LAYER_1_TRAIN_FILE, LAYER_1_TEST_FILE, LAYER_2_TRAIN_FILE, LAYER_2_TEST_FILE) 
 
 - The property list is in **/src/property.py**. 
 

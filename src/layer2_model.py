@@ -18,21 +18,21 @@ from property import *
 from layer1_model import *
 
 class VideoSet:
-    def __init__(self, is_regenerate, trainData, testData):
+    def __init__(self, is_regenerate, useCustomDataList):
         self.training_forest = setup_layer1_model(MODEL_EPOCH_NUM)
         
         self.clean_raw_data(is_regenerate)
 
-        self.all_video_x, self.all_video_y = self.load_data_from_file(self.process_data_path)
-        self._divide_dataset(LAYER_2_VALID_RATIO, LAYER_2_TEST_RATIO)
+        if (useCustomDataList):
+            preprocess_layer2_video()
+            self.train_video_x, self.train_video_y = self.load_data_from_file(LAYER_2_TRAIN_PATH)
+            self.valid_video_x, self.valid_video_y = self.load_data_from_file(LAYER_2_VALID_PATH)
+            self.test_video_x, self.test_video_y = self.load_data_from_file(LAYER_2_TEST_PATH)
 
-        if trainData is not None:
-            assert os.path.exists(trainData), "Can not find the path, "+str(trainData)
-            self.train_video_x, self.train_video_y = self.load_data_from_file(trainData)
+        else:
+            self.all_video_x, self.all_video_y = self.load_data_from_file(self.process_data_path)
+            self._divide_dataset(LAYER_2_VALID_RATIO, LAYER_2_TEST_RATIO)
 
-        if testData is not None:
-            assert os.path.exists(testData), "Can not find the path, "+str(testData)
-            self.test_video_x, self.test_video_y = self.load_data_from_file(testData)
 
     def clean_raw_data(self, is_regenerate):
         print("Preparing layer2 clean data...")
@@ -157,6 +157,6 @@ class SecondLayerModel:
 def setup_layer2_model(max_iter):
     return SecondLayerModel(LAYER_2_MODEL_TYPE, max_iter, LAYER2_ACTIVATION, LAYER2_SOLVER)
 
-def setup_layer2_database(trainData, testData):
-    return VideoSet(REGENERATE_LAYER2_DATA, trainData, testData)
+def setup_layer2_database(useCustomDataList):
+    return VideoSet(REGENERATE_LAYER2_DATA, useCustomDataList)
 
