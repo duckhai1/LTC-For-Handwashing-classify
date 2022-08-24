@@ -52,22 +52,30 @@ def preprocess_layer1_video():
                       data_path=LAYER_1_TRAIN_PATH)
     prepare_data_path(rawdata_path=LAYER_1_RAWDATA_PATH,
                       data_path=LAYER_1_TEST_PATH)
+    prepare_data_path(rawdata_path=LAYER_1_RAWDATA_PATH,
+                      data_path=LAYER_1_VALID_PATH)                  
 
     layer1_video_to_feature(input_file=LAYER_1_TRAIN_FILE,
                             output_folder=LAYER_1_TRAIN_PATH)
     layer1_video_to_feature(input_file=LAYER_1_TEST_FILE,
                             output_folder=LAYER_1_TEST_PATH)
+    layer1_video_to_feature(input_file=LAYER_1_VALID_FILE,
+                            output_folder=LAYER_1_VALID_PATH)
 
 def preprocess_layer2_video():
     prepare_data_path(rawdata_path=LAYER_2_RAWDATA_PATH,
                       data_path=LAYER_2_TRAIN_PATH)
     prepare_data_path(rawdata_path=LAYER_2_RAWDATA_PATH,
                       data_path=LAYER_2_TRAIN_PATH)
+    prepare_data_path(rawdata_path=LAYER_2_RAWDATA_PATH,
+                      data_path=LAYER_2_VALID_PATH)
 
     layer2_video_to_feature(input_file=LAYER_2_TRAIN_FILE,
                             output_folder=LAYER_2_TRAIN_PATH)
     layer2_video_to_feature(input_file=LAYER_2_TEST_FILE,
                             output_folder=LAYER_2_TEST_PATH)
+    layer2_video_to_feature(input_file=LAYER_2_VALID_FILE,
+                            output_folder=LAYER_2_VALID_PATH)
 
 def layer1_video_to_feature(input_file, output_folder):
     image_list = [line.strip().split() for line in open(input_file)]

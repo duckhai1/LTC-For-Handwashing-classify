@@ -28,8 +28,10 @@ REGENERATE_LAYER1_DATA = False                                      # Re-compute
 REGENERATE_LAYER2_DATA = False                                      # Re-compute dataset flag
 
 LAYER_1_TRAIN_FILE=os.path.join("data","layer_1_data","case1_train.lst")
+LAYER_1_VALID_FILE=os.path.join("data","layer_1_data","case1_valid.lst")
 LAYER_1_TEST_FILE=os.path.join("data","layer_1_data","case1_test.lst")
 LAYER_2_TRAIN_FILE=os.path.join("data","layer_2_data","case1_train.lst")
+LAYER_2_VALID_FILE=os.path.join("data","layer_2_data","case1_valid.lst")
 LAYER_2_TEST_FILE=os.path.join("data","layer_2_data","case1_test.lst")
 
 ######
