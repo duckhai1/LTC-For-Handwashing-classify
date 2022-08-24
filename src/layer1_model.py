@@ -4,11 +4,10 @@ simplefilter(action='ignore', category=FutureWarning)
 import os
 import glob
 import pickle
-
 import numpy as np
 import pandas as pd
-import tensorflow as tf
-
+import tensorflow.compat.v1 as tf
+tf.disable_v2_behavior()
 import ltc_model as ltc
 from ctrnn_model import CTRNN, NODE, CTGRU
 
@@ -19,16 +18,33 @@ from read_data import *
 tf.logging.set_verbosity(tf.logging.ERROR)
 
 class DataSet:
-    def __init__(self, is_regenerate):
+    def __init__(self, is_regenerate, trainData, testData):
+    
+        self.trainfile=LAYER_1_TRAIN_FILE
+        self.testfile=LAYER_1_TEST_FILE
+        
         self.clean_raw_data(is_regenerate)
 
-        all_x, all_y = self.load_data_from_file()
+        all_x, all_y = self.load_data_from_file(LAYER_1_TRAIN_DATA_PATH)
 
         # all_x shape: (time step for each layer, number of batch, number of feature)
         self.all_x = np.stack(all_x, axis=1)
         self.all_y = np.stack(all_y, axis=1)
         
         self._divide_dataset(VALID_RATIO, TEST_RATIO)
+
+        if trainData is not None:
+            assert os.path.exists(trainData), "Can not find the path, "+str(trainData)
+            self.train_x, self.train_y = self.load_data_from_file(trainData)
+            self.train_x = np.stack(self.train_x, axis=1)
+            self.train_y = np.stack(self.train_y, axis=1)
+
+        if testData is not None:
+            assert os.path.exists(testData), "Can not find the path, "+str(testData)
+            self.test_x, self.test_y = self.load_data_from_file(testData)
+            self.test_x = np.stack(self.test_x, axis=1)
+            self.test_y = np.stack(self.test_y, axis=1)
+
         self._divide_train_data(NUMBER_OF_TREE)
         print("all train_x.shape", self.train_x.shape)
         print("all train_y.shape", self.train_y.shape)
@@ -47,16 +63,16 @@ class DataSet:
         extract_layer1_train_video()
         print("Done preparing layer1 clean data")
 
-    def load_data_from_file(self):
+    def load_data_from_file(self, process_data_path):
         all_x = []
         all_y = []
         
         # read each label in dataset
         print("Reading data layer1 ...", end="")
-        for _, label_list, _ in os.walk(LAYER_1_TRAIN_DATA_PATH):
+        for _, label_list, _ in os.walk(process_data_path):
             for label in label_list:
                 # read each video file in each label
-                for dirname, _, filenames in os.walk(os.path.join(LAYER_1_TRAIN_DATA_PATH, label)):
+                for dirname, _, filenames in os.walk(os.path.join(process_data_path, label)):
                     for filename in filenames:
                         if filename.endswith(DATA_EXTENSION):
                             data_path = os.path.join(dirname, filename)
@@ -481,6 +497,6 @@ class TrainingForest:
 def setup_layer1_model(max_iter):
     return TrainingForest(NUMBER_OF_TREE, TREE_TYPE_LIST, MODEL_SIZE, MODEL_SPARSITY, max_iter, MODEL_LOG_PERIOD)
 
-def setup_layer1_database():
-    return DataSet(REGENERATE_LAYER1_DATA)
+def setup_layer1_database(trainData, testData):
+    return DataSet(REGENERATE_LAYER1_DATA, trainData, testData)
 

@@ -1,12 +1,13 @@
-from warnings import simplefilter 
+from warnings import simplefilter
+from bs4 import SoupStrainer 
 simplefilter(action='ignore', category=FutureWarning)
 
 import numpy as np
 import pandas as pd 
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
+tf.disable_v2_behavior()
 from sklearn.neural_network import MLPClassifier
 from sklearn import preprocessing
-from sklearn import metrics
 from sklearn.metrics import classification_report,confusion_matrix, plot_roc_curve, plot_precision_recall_curve
 import sys
 import pickle
@@ -17,13 +18,21 @@ from property import *
 from layer1_model import *
 
 class VideoSet:
-    def __init__(self, is_regenerate):
+    def __init__(self, is_regenerate, trainData, testData):
         self.training_forest = setup_layer1_model(MODEL_EPOCH_NUM)
         
         self.clean_raw_data(is_regenerate)
 
-        self.all_video_x, self.all_video_y = self.load_data_from_file()
+        self.all_video_x, self.all_video_y = self.load_data_from_file(self.process_data_path)
         self._divide_dataset(LAYER_2_VALID_RATIO, LAYER_2_TEST_RATIO)
+
+        if trainData is not None:
+            assert os.path.exists(trainData), "Can not find the path, "+str(trainData)
+            self.train_video_x, self.train_video_y = self.load_data_from_file(trainData)
+
+        if testData is not None:
+            assert os.path.exists(testData), "Can not find the path, "+str(testData)
+            self.test_video_x, self.test_video_y = self.load_data_from_file(testData)
 
     def clean_raw_data(self, is_regenerate):
         print("Preparing layer2 clean data...")
@@ -42,10 +51,10 @@ class VideoSet:
         self.generate_data()
         print("Done processing layer2 data")
 
-    def load_data_from_file(self):
+    def load_data_from_file(self, process_data_path):
         all_x = []
         all_y = []
-        for dirname, _, filenames in os.walk(self.process_data_path):
+        for dirname, _, filenames in os.walk(process_data_path):
             for filename in filenames:
                 if filename.endswith(DATA_EXTENSION):
                     data_path = os.path.join(dirname, filename)
@@ -100,7 +109,7 @@ class VideoSet:
         self.test_video_y = self.all_video_y[permutation[valid_size:valid_size+test_size]]
         self.train_video_x = self.all_video_x[permutation[valid_size+test_size:]]
         self.train_video_y = self.all_video_y[permutation[valid_size+test_size:]]
-
+        print("========================VIDEO TRAIN ===========================")
 
 
 class SecondLayerModel:
@@ -134,7 +143,7 @@ class SecondLayerModel:
 
     def predict(self, dataset):
         predict_test = self.model.predict(dataset.test_video_x)
-        accuracy = metrics.accuracy_score(dataset.test_video_y, predict_test)        
+        accuracy = 1 - (np.mean( predict_test != dataset.test_video_y ))
 
         with open(self.result_path,"w") as f:
             f.write(f"accuracy: {accuracy}")
@@ -143,38 +152,11 @@ class SecondLayerModel:
             f.write("\n")
             f.write(str(classification_report(dataset.test_video_y, predict_test)))
 
-        self.draw_roc_graph(dataset)
         print(">>> Accuracy: ", accuracy)
-
-    def draw_roc_graph(self, dataset):
-        y_pred_proba = self.model.predict_proba(dataset.test_video_x)[::,1]
-        fpr, tpr, threshold = metrics.roc_curve(dataset.test_video_y, y_pred_proba)
-        roc_auc = metrics.auc(fpr, tpr)
-        plt.plot(fpr, tpr, 'b', label = 'AUC = %0.2f' % roc_auc)
-        plt.plot([0, 1], [0, 1],'r--')
-        
-        plt.legend(loc = 'lower right')
-        plt.ylabel('True Positive Rate')
-        plt.xlabel('False Positive Rate')
-        plt.show()
-
-    def draw_pr_graph(self, dataset):
-        predict_test = self.model.predict(dataset.test_video_x)
-
-        y_pred_proba_rc = self.model.predict_proba(dataset.test_video_x)[::,1]
-        prec, recall, threshold = metrics.precision_recall_curve(dataset.test_video_y , y_pred_proba_rc)
-        ap_auc = metrics.average_precision_score(dataset.test_video_y , y_pred_proba_rc)
-        plt.step(recall, prec, 'b', label = 'AP = %0.2f' % ap_auc)
-        plt.plot([0, 1], [1, 0],'r--')
-        plt.legend(loc = 'lower left')
-        plt.ylabel('Precision')
-        plt.xlabel('Recall')
-        plt.show()
-
 
 def setup_layer2_model(max_iter):
     return SecondLayerModel(LAYER_2_MODEL_TYPE, max_iter, LAYER2_ACTIVATION, LAYER2_SOLVER)
 
-def setup_layer2_database():
-    return VideoSet(REGENERATE_LAYER2_DATA)
+def setup_layer2_database(trainData, testData):
+    return VideoSet(REGENERATE_LAYER2_DATA, trainData, testData)
 
