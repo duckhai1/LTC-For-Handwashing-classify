@@ -1,4 +1,4 @@
-import tensorflow.compat.v1 as tf  # Hieu 22/8
+import tensorflow as tf
 from property import *
 from skimage.feature import hog
 import cv2
@@ -12,13 +12,6 @@ from warnings import simplefilter
 from skimage import feature
 simplefilter(action='ignore', category=FutureWarning)
 
-
-#import tensorflow as tf
-tf.disable_v2_behavior()  # Hieu 22/8
-
-
-# import config property
-tf.logging.set_verbosity(tf.logging.ERROR)
 
 def extract_single_vid(video_path):
     # reading frame list

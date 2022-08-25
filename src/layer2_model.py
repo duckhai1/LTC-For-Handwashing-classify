@@ -4,15 +4,12 @@ simplefilter(action='ignore', category=FutureWarning)
 
 import numpy as np
 import pandas as pd 
-import tensorflow.compat.v1 as tf
-tf.disable_v2_behavior()
+import tensorflow as tf
 from sklearn.neural_network import MLPClassifier
 from sklearn import preprocessing
 from sklearn.metrics import classification_report,confusion_matrix, plot_roc_curve, plot_precision_recall_curve
 import sys
 import pickle
-tf.logging.set_verbosity(tf.logging.ERROR)
-
 ## import config property
 from property import *
 from layer1_model import *

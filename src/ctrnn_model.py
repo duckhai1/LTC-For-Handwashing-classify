@@ -1,6 +1,6 @@
 #import tensorflow as tf
-import tensorflow.compat.v1 as tf #Hieu 22/8
-tf.disable_v2_behavior() #Hieu 22/8
+import tensorflow as tf
+
 
 import numpy  as np
 import os

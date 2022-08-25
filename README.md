@@ -20,7 +20,7 @@ LTC reference: https://github.com/raminmh/liquid_time_constant_networks/tree/mas
 
         For layer2, the data to pass into model is located in `LAYER_2_TRAIN_PROCESSED_PATH`
 
-        We can disable the shuffle feature to use the pre-existed `.lst` object by adding argument `--divideLayer1 false --divideLayer2 false`. The pre-existed data list will be stored in `LAYER_1_TRAIN_FILE` and `LAYER_2_TRAIN_FILE` (refer `properties.py` file for more configuration)
+        We can disable the shuffle feature to use the pre-existed `.lst` object by adding argument `--divideLayer1 false --divideLayer2 false` and set both properties `REGENERATE_LAYER1_DATA` and `REGENERATE_LAYER2_DATA` to **False**. The pre-existed data list will be stored in `LAYER_1_TRAIN_FILE` and `LAYER_2_TRAIN_FILE` (refer `properties.py` file for more configuration)
 
     2. Train the inner layer (i.e layer1).
 

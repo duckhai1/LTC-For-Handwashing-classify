@@ -153,7 +153,7 @@ def layer2_video_to_feature(input_file, output_folder):
             np.save(path, frame_list)
     return
 
-def data_preprocess(divide_layer1_data=False, divide_layer2_data=False,\
+def data_preprocess(divide_layer1_data=False, divide_layer2_data=False,
     generate_layer1_feature_data=REGENERATE_LAYER1_DATA, generate_layer2_feature_data=REGENERATE_LAYER2_DATA):
     if divide_layer1_data:
         seperate_dataset(rawdata_path=LAYER_1_RAWDATA_PATH,val_ratio=0.2, test_ratio=0.1,\

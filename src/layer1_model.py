@@ -6,8 +6,7 @@ import glob
 import pickle
 import numpy as np
 import pandas as pd
-import tensorflow.compat.v1 as tf
-tf.disable_v2_behavior()
+import tensorflow as tf
 import ltc_model as ltc
 from ctrnn_model import CTRNN, NODE, CTGRU
 
@@ -15,7 +14,7 @@ from ctrnn_model import CTRNN, NODE, CTGRU
 from property import *
 from read_data import *
 
-tf.logging.set_verbosity(tf.logging.ERROR)
+
 
 class DataSet:
     def __init__(self, is_regenerate):
@@ -23,11 +22,10 @@ class DataSet:
         if (is_regenerate):
             self.clear_all_data()
 
-        self.train_video_x, self.train_video_y = self.load_data_from_file(LAYER_1_TRAIN_PATH)
-        self.valid_video_x, self.valid_video_y = self.load_data_from_file(LAYER_1_VALID_PATH)
-        self.test_video_x, self.test_video_y = self.load_data_from_file(LAYER_1_TEST_PATH)
+        self.train_x, self.train_y = self.load_data_from_file(LAYER_1_TRAIN_PATH)
+        self.test_y, self.test_y = self.load_data_from_file(LAYER_1_VALID_PATH)
+        self.test_x, self.test_y = self.load_data_from_file(LAYER_1_TEST_PATH)
 
-        self._divide_train_data(NUMBER_OF_TREE)
         print("Done preparing layer1 clean data")
         print("all train_x.shape", self.train_x.shape)
         print("all train_y.shape", self.train_y.shape)
@@ -35,6 +33,7 @@ class DataSet:
         print("each train_y_set shape", self.train_y_set[0].shape)
         print("test_x.shape", self.test_x.shape)
         print("test_y.shape", self.test_y.shape)
+        self._divide_train_data(NUMBER_OF_TREE)
 
     def clear_all_data():
         clear_data(LAYER_1_TRAIN_PATH)
