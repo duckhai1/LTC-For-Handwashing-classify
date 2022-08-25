@@ -46,7 +46,17 @@ if __name__ == '__main__':
         eval_layer2(layer1_model, layer2_model, args.path)
 
     elif args.layer == "preprocess":
-        data_preprocess(args.divideLayer1, args.divideLayer2)
+        if args.divideLayer1 == "true":
+            divide_layer1_data = True
+        else:
+            divide_layer1_data = False
+        
+        if args.divideLayer2 == "true":
+            divide_layer2_data = True
+        else:
+            divide_layer2_data = False
+            
+        data_preprocess(divide_layer1_data, divide_layer2_data)
         processing_layer2_feature_data()
     elif args.layer == "layer1":
         layer1_database = setup_layer1_database()
