@@ -26,6 +26,7 @@ class DataSet:
         self.test_y, self.test_y = self.load_data_from_file(LAYER_1_VALID_PATH)
         self.test_x, self.test_y = self.load_data_from_file(LAYER_1_TEST_PATH)
 
+        self._divide_train_data(NUMBER_OF_TREE)
         print("Done preparing layer1 clean data")
         print("all train_x.shape", self.train_x.shape)
         print("all train_y.shape", self.train_y.shape)
@@ -33,7 +34,6 @@ class DataSet:
         print("each train_y_set shape", self.train_y_set[0].shape)
         print("test_x.shape", self.test_x.shape)
         print("test_y.shape", self.test_y.shape)
-        self._divide_train_data(NUMBER_OF_TREE)
 
     def clear_all_data():
         clear_data(LAYER_1_TRAIN_PATH)
