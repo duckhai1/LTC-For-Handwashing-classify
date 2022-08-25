@@ -58,17 +58,48 @@ def generate_list_file_layer2(output_file, rawdata_path):
                     f.write(video_path+'\t'+label+'\n')
     f.close()
 
-def divide_dataset_from_file(input_file, train_file, test_file, valid_file):
-    #Divide dataset into train set, test set, and validation set
-    image_list = [line.strip().split() for line in open(input_file)]
+def divide_dataset_from_file(input_file, train_file, test_file, val_file, valid_ratio=VALID_RATIO, test_ratio=TEST_RATIO):
+    #Divide dataset (from the input file) into train set, test set, and validation set
+    image_list = [line for line in open(input_file)]
     total_seqs = len(image_list)
     permutation = np.random.RandomState(27731).permutation(total_seqs)
-    valid_size = int(VALID_RATIO*total_seqs)
-    test_size = int(TEST_RATIO*total_seqs)
+    valid_size = int(valid_ratio*total_seqs)
+    test_size = int(test_ratio*total_seqs)
 
-    valid_list=image_list[:,permutation[:valid_size]]
-    test_list = image_list[:,permutation[valid_size:valid_size+test_size]]
-    train_list = image_list[:,permutation[valid_size+test_size:]]
+    ftrain=open(train_file,'w')
+    ftest=open(test_file,'w')
+    fval=open(val_file,'w')
+
+    for i in range(total_seqs):
+        item=image_list[permutation[i]]
+        if i<valid_size:
+            fval.write(item)
+        elif i<valid_size+test_size:
+            ftest.write(item)
+        else:
+            ftrain.write(item)
+
+    ftrain.close()
+    ftest.close()
+    fval.close()
+
+def seperate_dataset(rawdata_path, val_ratio=0.2, test_ratio=0.1,\
+    file_list=None,train_file=None,test_file=None, val_file=None):
+    if file_list is None:
+        file_list=os.path.join(os.path.dirname(rawdata_path),'data_file.lst')
+    if train_file is None:
+        train_file=os.path.join(os.path.dirname(rawdata_path),'train_file.lst')
+    if test_file is None:
+        test_file=os.path.join(os.path.dirname(rawdata_path),'test_file.lst')
+    if val_file is None:
+        val_file=os.path.join(os.path.dirname(rawdata_path),'val_file.lst')
+    if not os.path.exists(file_list):
+        generate_list_file_layer1(output_file=file_list,rawdata_path=rawdata_path)
+    if not os.path.exists(test_file) and not os.path.exists(train_file):
+        divide_dataset_from_file(input_file=file_list,train_file=train_file,test_file=test_file,\
+            val_file=val_file, valid_ratio=val_ratio,test_ratio=test_ratio)
+    
+    return
 
 
 def get_file_list_layer1(path,output_file,rawdata_path,output_file2):
@@ -121,31 +152,81 @@ def get_file_list_layer2(path,output_file,rawdata_path):
                     f.write(rawfile+'\t'+label+'\n')
     f.close()
 
+def generate_val_from_train_test(org_file, train_file, test_file, val_file):
+    image_list = [line for line in open(org_file)]
+    image_list_train = [line for line in open(train_file)]
+    image_list_test = [line for line in open(test_file)]
+    image_list_val=[]
+    for item in image_list:
+        print('Processing:',item)
+        if item in image_list_train:
+            istrain=True
+        else:
+            istrain=False
+        if item in image_list_test:
+            istest=True
+        else:
+            istest=False
+        if istrain or istest:
+            continue
+        image_list_val.append(item)
+    if len(image_list)!=0:
+        f=open(val_file,'w')
+        for line in image_list_val:
+            f.write(line)
+        f.close()
+
+
 if __name__ == '__main__':
 
+    '''
+    seperate_dataset(rawdata_path=LAYER_1_RAWDATA_PATH,val_ratio=0.2, test_ratio=0.1)
+    '''
+
+    '''
     input_file='data/layer_1_data/data_file.lst'
-    divide_dataset_from_file(input_file=input_file)
+    train_file_l1='data/layer_1_data/tmp_train.lst'
+    test_file_l1='data/layer_1_data/tmp_test.lst'
+    val_file_l1='data/layer_1_data/tmp_val.lst'
+    divide_dataset_from_file(input_file=input_file,train_file=train_file_l1,\
+        test_file=test_file_l1,val_file=val_file_l1)
+    '''
+    #Phục hồi lại file validation
+    '''
+    org_file_l1='data/layer_2_data/data_file.lst'
+    train_file_l1='data/layer_2_data/train.lst'
+    test_file_l1='data/layer_2_data/test4.lst'
+    val_file_l1='data/layer_2_data/val4.lst'
+    generate_val_from_train_test(org_file=org_file_l1,train_file=train_file_l1,\
+        test_file=test_file_l1,val_file=val_file_l1)
+    '''
+    
+    #Tạo danh sách các file từ tập dữ liệu 1
     '''
     output_file='data/layer_1_data/data_file.lst'
     generate_list_file_layer1(output_file=output_file, rawdata_path=LAYER_1_RAWDATA_PATH)
     '''
-
+    
+    #Tạo danh sách các file từ tập dữ liệu 2
     '''
     output_file='data/layer_2_data/data_file.lst'
     generate_list_file_layer2(output_file=output_file, rawdata_path=LAYER_2_RAWDATA_PATH)
     '''
+
+    #Phục hồi file đặc trưng về file danh mục cho lớp 1
     '''
     rawdata_path_l1='data/layer_1_data/raw_video'
 
-    path_l1='data/layer_1_data/samples/case1/test'
-    output_file_l1='data/layer_1_data/case1_test.lst'
-    output_file_l1_without_aug='data/layer_1_data/case1_test_org.lst'
+    path_l1='data/layer_1_data/samples/case2/test'
+    output_file_l1='data/layer_1_data/test.lst'
+    output_file_l1_without_aug='data/layer_1_data/test_f.lst'
 
     get_file_list_layer1(path=path_l1,output_file=output_file_l1,rawdata_path=rawdata_path_l1,output_file2=output_file_l1_without_aug)
     '''
+    #Phục hồi file đặc trưng về file danh mục cho lớp 2
     '''
-    path_l2='data/test/case1/train'
-    output_file_l2='data/layer_2_data/case1_train.lst'
+    path_l2='data/test/case2/test4'
+    output_file_l2='data/layer_2_data/test4.lst'
     rawdata_path_l2='data/layer_2_data/raw_video'
     get_file_list_layer2(path=path_l2,output_file=output_file_l2,rawdata_path=rawdata_path_l2)
     '''

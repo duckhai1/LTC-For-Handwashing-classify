@@ -1,6 +1,7 @@
 from numpy.core.defchararray import array
 from layer1_model import *
 from layer2_model import *
+from data_preprocess import *
 import argparse
 
 
@@ -29,12 +30,12 @@ def eval_layer2(layer1_model, layer2_model, vid_path):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('-l','--layer', help="Choose which layer to run on: layer1/layer2", default="layer1", required=False) #Hieu
+    parser.add_argument('-l','--layer', help="Choose which layer to run on: preprocess/layer1/layer2", default="layer1", required=False) #Hieu
     parser.add_argument('--train', help="Set train mode", default="true")
     parser.add_argument('--test', help="Set test mode", default="true")
     parser.add_argument('--eval', help="Set eval mode",default="false")
-    parser.add_argument('--trainData', help="Set path to train data", default="None") #Hieu
-    parser.add_argument('--testData', help="Set eval test data", default="None")
+    parser.add_argument('--divideLayer1', help="Flag to trigger shuffle layer 1 data again", default="false") #Hieu
+    parser.add_argument('--divideLayer2', help="Flag to trigger shuffle layer 2 data again", default="false") #Hieu
     #parser.add_argument('-p', '--path',  help="Set video path for evaluation")
 
     args = parser.parse_args()
@@ -44,8 +45,11 @@ if __name__ == '__main__':
 
         eval_layer2(layer1_model, layer2_model, args.path)
 
+    elif args.layer == "preprocess":
+        data_preprocess(args.divideLayer1, args.divideLayer2)
+        processing_layer2_feature_data()
     elif args.layer == "layer1":
-        layer1_database = setup_layer1_database(args.trainData, args.testData)
+        layer1_database = setup_layer1_database()
         layer1_model = setup_layer1_model(MODEL_EPOCH_NUM)
 
         if args.train == "true":
@@ -54,7 +58,7 @@ if __name__ == '__main__':
             test_model(layer1_model, layer1_database)
 
     elif args.layer == "layer2":
-        layer2_database = setup_layer2_database(args.trainData, args.testData)
+        layer2_database = setup_layer2_database()
         layer2_model = setup_layer2_model(LAYER2_EPOCH_NUM)
 
         if args.train == "true":

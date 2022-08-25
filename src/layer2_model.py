@@ -18,50 +18,40 @@ from property import *
 from layer1_model import *
 
 class VideoSet:
-    def __init__(self, is_regenerate, trainData, testData):
-        self.training_forest = setup_layer1_model(MODEL_EPOCH_NUM)
-        
-        self.clean_raw_data(is_regenerate)
+    def __init__(self, is_regenerate):
 
-        self.all_video_x, self.all_video_y = self.load_data_from_file(self.process_data_path)
-        self._divide_dataset(LAYER_2_VALID_RATIO, LAYER_2_TEST_RATIO)
-
-        if trainData is not None:
-            assert os.path.exists(trainData), "Can not find the path, "+str(trainData)
-            self.train_video_x, self.train_video_y = self.load_data_from_file(trainData)
-
-        if testData is not None:
-            assert os.path.exists(testData), "Can not find the path, "+str(testData)
-            self.test_video_x, self.test_video_y = self.load_data_from_file(testData)
-
-    def clean_raw_data(self, is_regenerate):
-        print("Preparing layer2 clean data...")
-        prepare_traindata_destination(LAYER_2_TRAIN_RAWDATA_PATH, LAYER_2_TRAIN_DATA_PATH)  
-        prepare_processed_data_destination()
         if (is_regenerate):
-            clear_processed_data_destination()
-            clear_train_data(LAYER_2_TRAIN_DATA_PATH)
-        extract_layer2_train_video()
-        print("Done preparing layer2 clean data")
+            self.clear_all_data()
 
-        print("Processing layer2 data...")
-        self.process_data_path = os.path.join(LAYER_2_PROCESSED_DATA_PATH, SAVE_LOCATION_NAME)
-        if (not os.path.exists(self.process_data_path)):
-            os.makedirs(self.process_data_path)
-        self.generate_data()
+        
+        self.train_video_x, self.train_video_y = self.load_data_from_file(LAYER_2_TRAIN_PROCESSED_PATH)
+        self.valid_video_x, self.valid_video_y = self.load_data_from_file(LAYER_2_VALID_PROCESSED_PATH)
+        self.test_video_x, self.test_video_y = self.load_data_from_file(LAYER_2_TEST_PROCESSED_PATH)
         print("Done processing layer2 data")
+
+    def clear_all_data():
+        clear_data(LAYER_2_TRAIN_PATH)
+        clear_data(LAYER_2_VALID_PATH)
+        clear_data(LAYER_2_TEST_PATH)
+        clear_data(LAYER_2_TRAIN_PROCESSED_PATH)
+        clear_data(LAYER_2_VALID_PROCESSED_PATH)
+        clear_data(LAYER_2_TEST_PROCESSED_PATH)
 
     def load_data_from_file(self, process_data_path):
         all_x = []
         all_y = []
-        for dirname, _, filenames in os.walk(process_data_path):
-            for filename in filenames:
-                if filename.endswith(DATA_EXTENSION):
-                    data_path = os.path.join(dirname, filename)
-                    video_data = np.load(data_path)
 
-                    all_x.append(video_data[:-1])            
-                    all_y.append(video_data[-1])
+        # read each label in dataset
+        print("Reading data layer1 ...", end="")
+        for _, label_list, _ in os.walk(process_data_path):
+            for label in label_list:
+                for dirname, _, filenames in os.walk(os.path.join(process_data_path, label)):
+                    for filename in filenames:
+                        if filename.endswith(DATA_EXTENSION):
+                            data_path = os.path.join(dirname, filename)
+                            video_data = np.load(data_path)
+                            all_x.append(video_data[:-1])            
+                            all_y.append(video_data[-1])
         
         # Normalize data
         all_x = np.array(all_x)
@@ -70,46 +60,7 @@ class VideoSet:
         all_x[:,6:] = normalized_score
         return np.array(all_x), np.array(all_y)
 
-    def generate_data(self):
-        for _, video_label_list, _ in os.walk(LAYER_2_TRAIN_DATA_PATH):
-            for video_label in video_label_list:
-                for dirname, _, filenames in os.walk(os.path.join(LAYER_2_TRAIN_DATA_PATH, video_label)):
-                    # read each video file in each label
-                    for filename in filenames:
-                        if filename.endswith(DATA_EXTENSION):
-                            print(f"processing {video_label}_{os.path.splitext(filename)[0]}.npy")
-                            sys.stdout.flush()
-
-                            ## already preprocess:  
-                            save_path = os.path.join(self.process_data_path, f"{video_label}_{os.path.splitext(filename)[0]}.npy")
-                            if os.path.isfile(save_path):
-                                print("skip")
-                                continue
-                            
-                            video_feature = np.load(os.path.join(dirname, filename))
-                            _, data = self.training_forest._process_video(video_feature[:,:-1])
-                            feature_vector = [step[0] for step in data] + [step[1] for step in data]
-                            
-                            feature_vector.append(float(video_feature[0,-1]))    
-                            print(">>> ", feature_vector)
-
-                            # save to file
-                            np.save(save_path, feature_vector)                      
-
-
-    def _divide_dataset(self, valid_ratio, test_ratio):
-        total_seqs = self.all_video_x.shape[0]
-        permutation = np.random.permutation(total_seqs)
-        valid_size = int(valid_ratio*total_seqs)
-        test_size = int(test_ratio*total_seqs)
-
-        self.valid_video_x = self.all_video_x[permutation[:valid_size]]
-        self.valid_video_y = self.all_video_y[permutation[:valid_size]]
-        self.test_video_x = self.all_video_x[permutation[valid_size:valid_size+test_size]]
-        self.test_video_y = self.all_video_y[permutation[valid_size:valid_size+test_size]]
-        self.train_video_x = self.all_video_x[permutation[valid_size+test_size:]]
-        self.train_video_y = self.all_video_y[permutation[valid_size+test_size:]]
-        print("========================VIDEO TRAIN ===========================")
+               
 
 
 class SecondLayerModel:
@@ -118,8 +69,8 @@ class SecondLayerModel:
         self.activation_type = activation_type
         self.solver_type = solver_type
 
-        self.result_path = os.path.join("results", SAVE_LOCATION_NAME, f"{LAYER_2_MODEL_TYPE}_{LAYER2_EPOCH_NUM}_result.txt")
-        self.model_save_path = os.path.join("tf_sessions", SAVE_LOCATION_NAME, f"{LAYER_2_MODEL_TYPE}_{LAYER2_EPOCH_NUM}_model_checkpoint.pkl")
+        self.result_path = os.path.join("results", "logs", SAVE_LOCATION_NAME, f"{LAYER_2_MODEL_TYPE}_{LAYER2_EPOCH_NUM}_result.txt")
+        self.model_save_path = os.path.join("results","tf_sessions", SAVE_LOCATION_NAME, f"{LAYER_2_MODEL_TYPE}_{LAYER2_EPOCH_NUM}_model_checkpoint.pkl")
         
         if (os.path.exists(self.model_save_path)):
             with open(self.model_save_path, 'rb') as f:
@@ -157,6 +108,38 @@ class SecondLayerModel:
 def setup_layer2_model(max_iter):
     return SecondLayerModel(LAYER_2_MODEL_TYPE, max_iter, LAYER2_ACTIVATION, LAYER2_SOLVER)
 
-def setup_layer2_database(trainData, testData):
-    return VideoSet(REGENERATE_LAYER2_DATA, trainData, testData)
+def setup_layer2_database():
+    return VideoSet(REGENERATE_LAYER2_DATA)
 
+def processing_layer2_feature_data():
+    def process_feature_data(training_forest, feature_data_path, process_data_path):
+        for _, video_label_list, _ in os.walk(feature_data_path):
+            for video_label in video_label_list:
+                for dirname, _, filenames in os.walk(os.path.join(feature_data_path, video_label)):
+                    # read each video file in each label
+                    for filename in filenames:
+                        if filename.endswith(DATA_EXTENSION):
+                            print(f"processing {video_label}_{os.path.splitext(filename)[0]}.npy")
+                            sys.stdout.flush()
+
+                            ## already preprocess:  
+                            save_path = os.path.join(process_data_path, video_label,  f"{os.path.splitext(filename)[0]}.npy")
+                            if os.path.isfile(save_path):
+                                print("skip")
+                                continue
+                            
+                            video_feature = np.load(os.path.join(dirname, filename))
+                            _, data = training_forest._process_video(video_feature[:,:-1])
+                            feature_vector = [step[0] for step in data] + [step[1] for step in data]
+                            
+                            feature_vector.append(float(video_feature[0,-1]))    
+                            print(">>> ", feature_vector)
+
+                            # save to file
+                            np.save(save_path, feature_vector)       
+    
+    training_forest = setup_layer1_model(MODEL_EPOCH_NUM)
+
+    process_feature_data(training_forest, LAYER_2_TRAIN_PATH, LAYER_2_TRAIN_PROCESSED_PATH)
+    process_feature_data(training_forest, LAYER_2_VALID_PATH, LAYER_2_VALID_PROCESSED_PATH)
+    process_feature_data(training_forest, LAYER_2_TEST_PATH, LAYER_2_TEST_PROCESSED_PATH)
