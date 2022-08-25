@@ -10,7 +10,7 @@ LTC reference: https://github.com/raminmh/liquid_time_constant_networks/tree/mas
 ### Train model
 
 - Go to src folder then:
-    1. Preprocessing the data
+    1. Preprocessing the data (update these properties `REGENERATE_LAYER1_DATA` and `REGENERATE_LAYER2_DATA` to **True** )
         
         > `python main.py -l preprocess`
 
