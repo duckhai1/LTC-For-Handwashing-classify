@@ -72,7 +72,7 @@ if __name__ == '__main__':
             divide_layer2_data = False
             
         data_preprocess(divide_layer1_data, divide_layer2_data, REGENERATE_LAYER1_DATA, REGENERATE_LAYER2_DATA)
-        # processing_layer2_feature_data()
+        processing_layer2_feature_data()
     elif args.layer == "layer1":
         layer1_database = setup_layer1_database()
         layer1_model = setup_layer1_model(MODEL_EPOCH_NUM)
