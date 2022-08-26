@@ -18,9 +18,16 @@ from read_data import *
 
 class DataSet:
     def __init__(self):
-        self.train_x, self.train_y = self.load_data_from_file(LAYER_1_TRAIN_PATH)
-        self.test_y, self.test_y = self.load_data_from_file(LAYER_1_VALID_PATH)
-        self.test_x, self.test_y = self.load_data_from_file(LAYER_1_TEST_PATH)
+        train_x, train_y = self.load_data_from_file(LAYER_1_TRAIN_PATH)
+        valid_x, valid_y = self.load_data_from_file(LAYER_1_VALID_PATH)
+        test_x, test_y = self.load_data_from_file(LAYER_1_TEST_PATH)
+
+        self.train_x = np.stack(train_x, axis=1)
+        self.train_y = np.stack(train_y, axis=1)
+        self.valid_x = np.stack(valid_x, axis=1)
+        self.valid_y = np.stack(valid_y, axis=1)
+        self.test_x = np.stack(test_x, axis=1)
+        self.test_y = np.stack(test_y, axis=1)
 
         self._divide_train_data(NUMBER_OF_TREE)
         print("Done preparing layer1 clean data")
