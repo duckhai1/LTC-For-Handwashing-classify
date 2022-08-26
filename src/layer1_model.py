@@ -17,11 +17,7 @@ from read_data import *
 
 
 class DataSet:
-    def __init__(self, is_regenerate):
-
-        if (is_regenerate):
-            self.clear_all_data()
-
+    def __init__(self):
         self.train_x, self.train_y = self.load_data_from_file(LAYER_1_TRAIN_PATH)
         self.test_y, self.test_y = self.load_data_from_file(LAYER_1_VALID_PATH)
         self.test_x, self.test_y = self.load_data_from_file(LAYER_1_TEST_PATH)
@@ -35,10 +31,6 @@ class DataSet:
         print("test_x.shape", self.test_x.shape)
         print("test_y.shape", self.test_y.shape)
 
-    def clear_all_data():
-        clear_data(LAYER_1_TRAIN_PATH)
-        clear_data(LAYER_1_VALID_PATH)
-        clear_data(LAYER_1_TEST_PATH)
         
     def load_data_from_file(self, process_data_path):
         all_x = []
@@ -462,5 +454,5 @@ def setup_layer1_model(max_iter):
     return TrainingForest(NUMBER_OF_TREE, TREE_TYPE_LIST, MODEL_SIZE, MODEL_SPARSITY, max_iter, MODEL_LOG_PERIOD)
 
 def setup_layer1_database():
-    return DataSet(REGENERATE_LAYER1_DATA)
+    return DataSet()
 

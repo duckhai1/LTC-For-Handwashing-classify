@@ -15,24 +15,11 @@ from property import *
 from layer1_model import *
 
 class VideoSet:
-    def __init__(self, is_regenerate):
-
-        if (is_regenerate):
-            self.clear_all_data()
-
-        
+    def __init__(self):        
         self.train_video_x, self.train_video_y = self.load_data_from_file(LAYER_2_TRAIN_PROCESSED_PATH)
         self.valid_video_x, self.valid_video_y = self.load_data_from_file(LAYER_2_VALID_PROCESSED_PATH)
         self.test_video_x, self.test_video_y = self.load_data_from_file(LAYER_2_TEST_PROCESSED_PATH)
         print("Done processing layer2 data")
-
-    def clear_all_data():
-        clear_data(LAYER_2_TRAIN_PATH)
-        clear_data(LAYER_2_VALID_PATH)
-        clear_data(LAYER_2_TEST_PATH)
-        clear_data(LAYER_2_TRAIN_PROCESSED_PATH)
-        clear_data(LAYER_2_VALID_PROCESSED_PATH)
-        clear_data(LAYER_2_TEST_PROCESSED_PATH)
 
     def load_data_from_file(self, process_data_path):
         all_x = []
@@ -106,7 +93,7 @@ def setup_layer2_model(max_iter):
     return SecondLayerModel(LAYER_2_MODEL_TYPE, max_iter, LAYER2_ACTIVATION, LAYER2_SOLVER)
 
 def setup_layer2_database():
-    return VideoSet(REGENERATE_LAYER2_DATA)
+    return VideoSet()
 
 def processing_layer2_feature_data():
     def process_feature_data(training_forest, feature_data_path, process_data_path):
