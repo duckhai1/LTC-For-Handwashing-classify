@@ -331,8 +331,8 @@ class TrainingForest:
         self.log_period = log_period
 
         # save result to file
-        self.result_path = os.path.join("results", SAVE_LOCATION_NAME)
-        self.result_file = os.path.join("results", SAVE_LOCATION_NAME,"forest_size{}.csv".format(self.model_size))
+        self.result_path = os.path.join("results", "logs", SAVE_LOCATION_NAME)
+        self.result_file = os.path.join("results", "logs", SAVE_LOCATION_NAME,"forest_size{}.csv".format(self.model_size))
         if(not os.path.exists(self.result_path)):
             os.makedirs(self.result_path)
         if(not os.path.isfile(self.result_file)):
