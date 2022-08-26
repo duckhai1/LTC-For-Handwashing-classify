@@ -10,3 +10,4 @@ ipykernel==5.1.0
 opencv-python==3.4.2.17
 opencv-contrib-python==3.4.2.17
 moviepy==1.0.3
+gast==0.2.2
