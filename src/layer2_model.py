@@ -54,7 +54,7 @@ class SecondLayerModel:
         self.solver_type = solver_type
 
         self.result_path = os.path.join("results", "logs", SAVE_LOCATION_NAME, f"{LAYER_2_MODEL_TYPE}_{LAYER2_EPOCH_NUM}_result.txt")
-        self.model_save_path = os.path.join("results","tf_sessions", SAVE_LOCATION_NAME, f"{LAYER_2_MODEL_TYPE}_{LAYER2_EPOCH_NUM}_model_checkpoint.pkl")
+        self.model_save_path = os.path.join("data","tf_sessions", SAVE_LOCATION_NAME, f"{LAYER_2_MODEL_TYPE}_{LAYER2_EPOCH_NUM}_model_checkpoint.pkl")
         
         if (os.path.exists(self.model_save_path)):
             with open(self.model_save_path, 'rb') as f:

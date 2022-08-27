@@ -166,7 +166,7 @@ class TrainingModel:
                 f.write("epoch, train loss, train accuracy, valid loss, valid accuracy, test loss, test accuracy\n")
 
         # store the save session
-        self.checkpoint_path = os.path.join("results", "tf_sessions",SAVE_LOCATION_NAME, f"model-{train_set_number}")
+        self.checkpoint_path = os.path.join("data", "tf_sessions",SAVE_LOCATION_NAME, f"model-{train_set_number}")
         self.backup_file_name = f"{train_set_number}-{self.model_type}-size-{self.model_size}"
         self.load_backup()
         if(not os.path.exists(self.checkpoint_path)):
