@@ -61,6 +61,6 @@ Turning on the --eval flag and feed video path to --path
 
 * The result of layer 2 is stored in: *results/logs/<**layer1_model_type**>/<**layer2_model_type**>\_<**layer2_epoch**>_result.csv
 
-* The model parameter can be found ind: *results/tf_sessions/*
+* The model parameter can be found ind: *data/trained-model/*
     * The **model-** folder is the trees parameter saves
     * The **.pkl** file is the layer2 parameter saves 
